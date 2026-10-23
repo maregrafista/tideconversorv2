@@ -1,7 +1,8 @@
 /* Acabamento editorial, no estilo de periódico científico (compartilhado pela v1 e pela v2) */
 :root{--serif:Charter,"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif}
 h1,h2,h3,.subhead,.brand strong{font-family:var(--serif)}
-h2{font-weight:600;letter-spacing:-.015em}
+h2{font-weight:600;letter-spacing:-.015em;font-size:clamp(22px,2.6vw,28px)}
+h3{font-size:clamp(14px,1.4vw,15.5px)}
 .sectionhead{border-bottom:1.5px solid var(--ink,#222);padding-bottom:12px}
 .sub{font-family:var(--serif);font-style:italic}
 .card{border-radius:3px;box-shadow:none}
@@ -20,37 +21,42 @@ h2{font-weight:600;letter-spacing:-.015em}
 .panel tbody th{font-weight:600}
 /* legendas de figuras e tabelas */
 figure{margin:0}
-.fig-cap,.cmp-tabhead,.carta-note{font:13px/1.5 var(--serif);color:var(--ink,#222);margin:10px 0 0}
+.fig-cap,.cmp-tabhead,.carta-note{font:clamp(12.5px,1.2vw,13.5px)/1.5 var(--serif);color:var(--ink,#222);margin:10px 0 0}
 .fig-cap b,.cmp-tabhead b{font-variant:small-caps;letter-spacing:.04em;font-weight:700}
 .cmp-tabhead{margin:22px 0 8px}
 .cmp-legend{font-family:ui-sans-serif,system-ui,sans-serif}
 /* Previsto × observado */
-#compare .intro{background:transparent;border:0;border-left:3px solid var(--forest,#173f35);border-radius:0;padding:2px 0 2px 14px;font:15.5px/1.6 var(--serif)}
+#compare .intro{background:transparent;border:0;border-left:3px solid var(--forest,#173f35);border-radius:0;padding:2px 0 2px 14px;font:clamp(14.5px,1.5vw,15.5px)/1.6 var(--serif)}
 #compare .cmp-cards{gap:0;border-top:1.5px solid var(--ink,#222);border-bottom:1.5px solid var(--ink,#222);margin-bottom:6px}
 #compare .cmp-card{border:0;border-radius:0;background:transparent;padding:12px 16px;border-left:1px solid var(--line)}
 #compare .cmp-card:first-child{border-left:0;padding-left:4px}
 #compare .cmp-card .k{font-size:11px;letter-spacing:.08em}
-#compare .cmp-card .v{font:600 32px var(--serif);letter-spacing:-.02em}
-#compare .cmp-verdict{font:17px/1.55 var(--serif);margin:16px 0}
+#compare .cmp-card .v{font:600 clamp(24px,2.8vw,30px) var(--serif);letter-spacing:-.02em}
+#compare .cmp-verdict{font:clamp(15px,1.6vw,16.5px)/1.55 var(--serif);margin:16px 0}
 #compare .cmp-tag{border-radius:3px}
 #compare .cmp-tip{border-radius:3px;font-family:ui-sans-serif,system-ui,sans-serif}
 #compare .fig{padding:16px 18px 12px}
 /* Quadro de informações da maré */
-#carta .carta-box{border:2px solid var(--ink,#222);outline:1px solid var(--ink,#222);outline-offset:4px;border-radius:0;padding:22px 26px;margin:6px 6px 22px;background:var(--card)}
+#carta .carta-box{border:2px solid var(--ink,#222);outline:1px solid var(--ink,#222);outline-offset:4px;border-radius:0;padding:clamp(14px,2.2vw,22px) clamp(14px,2.4vw,26px);margin:6px 6px 22px;background:var(--card)}
 #carta .carta-head{border-bottom:1.5px solid var(--ink,#222);padding-bottom:12px;margin-bottom:6px}
-#carta .carta-head span{font:600 12.5px ui-sans-serif,system-ui,sans-serif;letter-spacing:.32em;color:var(--ink)}
-#carta .carta-head b{font:700 28px var(--serif);letter-spacing:.02em;margin:4px 0}
-#carta .carta-head i{font:italic 14px var(--serif);color:var(--muted)}
-#carta h3{font:600 15px var(--serif);letter-spacing:0;text-transform:none;color:var(--ink);margin:22px 0 8px}
-#carta .carta-tab{font-size:14.5px}
-#carta .carta-tab th{font:600 11.5px ui-sans-serif,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:transparent}
+#carta .carta-head span{font:600 clamp(10.5px,1.1vw,12px) ui-sans-serif,system-ui,sans-serif;letter-spacing:.3em;color:var(--ink)}
+#carta .carta-head b{font:700 clamp(20px,2.6vw,26px) var(--serif);letter-spacing:.02em;margin:4px 0}
+#carta .carta-head i{font:italic clamp(12.5px,1.2vw,14px) var(--serif);color:var(--muted)}
+#carta h3{font:600 clamp(14px,1.3vw,15px) var(--serif);letter-spacing:0;text-transform:none;color:var(--ink);margin:22px 0 8px}
+#carta .carta-tab{font-size:clamp(13px,1.3vw,14.5px)}
+#carta .carta-tab th{font:600 10.5px ui-sans-serif,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:transparent}
 #carta .carta-tab th,#carta .carta-tab td{border-left:0;border-right:0;padding:8px 10px}
-#carta .carta-chart{font-size:16px}#carta .carta-chart th[colspan]{border-bottom:1px solid var(--ink)}
-#carta .carta-chart tr.faz td{background:transparent;font-weight:700;font-size:17px}
-#carta .carta-chart td{padding:10px 10px}
+#carta .carta-chart{font-size:clamp(13.5px,1.4vw,15px)}#carta .carta-chart th[colspan]{border-bottom:1px solid var(--ink);white-space:normal}
+#carta .carta-chart tr.faz td{background:transparent;font-weight:700;font-size:1.06em}
+#carta .carta-chart td{padding:9px 8px}
 #carta .carta-grid{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:26px}#carta table,#carta th,#carta td{white-space:normal}#carta .carta-chart th,#carta .carta-chart td{white-space:nowrap}#carta .carta-grid>*{min-width:0}
 #carta .carta-fig{margin-top:6px}
 #carta #cartaSvg{max-width:none;width:100%}
 #carta tr.ref td{border-top:1.5px solid var(--ink)}
-@media (max-width:760px){#carta .carta-grid{grid-template-columns:minmax(0,1fr)}#compare .cmp-card{border-left:0;border-top:1px solid var(--line)}#compare .cmp-card:first-child{border-top:0}#carta .carta-box{padding:16px 14px}#carta .carta-head b{font-size:23px}#carta .carta-chart{font-size:13.5px}#carta .carta-chart tr.faz td{font-size:14px}}
+@media (max-width:760px){#carta .carta-grid{grid-template-columns:minmax(0,1fr)}#compare .cmp-card{border-left:0;border-top:1px solid var(--line);padding:10px 4px}#compare .cmp-card:first-child{border-top:0}#carta .carta-box{padding:16px 14px}#carta .carta-head b{font-size:23px}#carta .carta-tab th,#carta .carta-tab td{padding:6px 6px}}
+#carta .tablewrap-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:480px){#carta .carta-chart thead tr:first-child th:nth-child(2),#carta .carta-chart thead tr:first-child th:nth-child(3),#carta .carta-chart tbody td:nth-child(2),#carta .carta-chart tbody td:nth-child(3){display:none}#carta .carta-box{padding:12px 9px;margin:4px 2px 18px;outline-offset:3px}#carta .carta-chart{font-size:12px}#carta .carta-chart th,#carta .carta-chart td{padding:6px 2px}#carta .carta-chart td:first-child,#carta .carta-chart th:first-child{width:66px;white-space:normal}#carta .carta-chart td:nth-child(4){font-size:11px;letter-spacing:-.02em}#carta .carta-chart th{font-size:9.5px;letter-spacing:.03em}.sectionhead{align-items:flex-start}}
 @media print{.topnav,header,footer{display:none}}
+.topnav button{white-space:nowrap}
+@media (max-width:900px){.topnav button,.topnav button[aria-selected=true]{padding:10px 8px!important;font-size:12.5px}.topnav{gap:0;flex-wrap:wrap;justify-content:flex-end}}
+@media (max-width:560px){.topnav{justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;max-width:100%}.topnav button{flex:none}}

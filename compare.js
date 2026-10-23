@@ -115,11 +115,11 @@
   }
   const ytick = (x, L, y, label) => { x.beginPath(); x.moveTo(L - 4, y); x.lineTo(L, y); x.strokeStyle = INK(); x.lineWidth = 1; x.stroke(); x.fillStyle = col('--chart-text'); x.textAlign = 'right'; x.font = FONT; x.fillText(label, L - 7, y + 4); };
   function xticks(t0, t1, x, X, ph, Tp, h, pw) {
-    const dayW = pw / len, step = Math.max(1, Math.ceil(56 / dayW)), grid = col('--chart-grid'), txt = col('--chart-text'), wd = dayW * step >= 64;
+    const dayW = pw / len, step = Math.max(1, Math.ceil(64 / dayW)), grid = col('--chart-grid'), txt = col('--chart-text'), wd = dayW * step >= 96;
     x.textAlign = 'center'; x.fillStyle = txt; x.strokeStyle = grid; x.font = FONT; x.lineWidth = 1;
     for (let k = 0, t = t0; t < t1; k++, t += DAY) {
       x.beginPath(); x.moveTo(X(t), Tp); x.lineTo(X(t), Tp + ph); x.stroke();
-      if (h && k % step === 0) x.fillText((wd ? WD[loc(t).getUTCDay()] + ' ' : '') + dm(t), X(t + DAY / 2), h - 6);
+      if (h && k % step === 0) { const lab = (wd ? WD[loc(t).getUTCDay()] + ' ' : '') + dm(t), hw = x.measureText(lab).width / 2, cx = Math.max(hw + 2, Math.min(x.canvas.clientWidth - hw - 2, X(t + DAY / 2))); x.fillText(lab, cx, h - 6); }
     }
   }
 
@@ -136,7 +136,7 @@
     for (const v of [0.5, 1, 1.5, 2, 2.5]) { x.strokeStyle = grid; x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); ytick(x, L, Y(v), fmt(v, 1)); }
     x.fillStyle = 'rgba(150,160,150,.18)'; for (const [a, b] of FIT) x.fillRect(X(a), Tp, X(b) - X(a), ph);
     x.fillStyle = txt; x.textAlign = 'center'; let lm = -1;
-    for (let t = first; t < tb; t += DAY) { const dd = loc(t); if (dd.getUTCDate() === 1) { const mo = dd.getUTCFullYear() * 12 + dd.getUTCMonth(); x.strokeStyle = grid; x.beginPath(); x.moveTo(X(t), Tp); x.lineTo(X(t), Tp + ph); x.stroke(); if (mo !== lm && dd.getUTCMonth() % (pw > 760 ? 2 : 3) === 0) x.fillText(MN[dd.getUTCMonth()] + '/' + String(dd.getUTCFullYear()).slice(2), X(t), h - 5); lm = mo; } }
+    for (let t = first; t < tb; t += DAY) { const dd = loc(t); if (dd.getUTCDate() === 1) { const mo = dd.getUTCFullYear() * 12 + dd.getUTCMonth(); x.strokeStyle = grid; x.beginPath(); x.moveTo(X(t), Tp); x.lineTo(X(t), Tp + ph); x.stroke(); if (mo !== lm && dd.getUTCMonth() % (pw > 760 ? 2 : pw > 440 ? 3 : 6) === 0) x.fillText(MN[dd.getUTCMonth()] + '/' + String(dd.getUTCFullYear()).slice(2), X(t), h - 5); lm = mo; } }
     x.fillStyle = txt; x.textAlign = 'left'; x.font = FONT; x.fillText('ajuste (bloco 02)', X(FIT[0][0]) + 4, Tp + 13);
     const line = (key, c, wd) => { x.strokeStyle = c; x.lineWidth = wd; x.beginPath(); let pt = null; for (const a of d) { if (pt !== null && a.t - pt <= 2 * DAY) x.lineTo(X(a.t + DAY / 2), Y(a[key])); else x.moveTo(X(a.t + DAY / 2), Y(a[key])); pt = a.t; } x.stroke(); };
     line('p', GREEN, 1.9); line('o', INK(), 1.3); frame(x, L, Tp, pw, ph, 'Nível médio diário (m)', null);

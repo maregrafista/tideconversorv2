@@ -45,22 +45,29 @@
     ['Incerteza do horário (95 %)', `± ${Math.round(p95(teste.map(e => e.dt)))} min nas preamares e baixamares, em dados fora do ajuste`],
     ['Variação do nível médio', 'o rio desloca o nível médio ao longo do ano; Sa (21,6 cm) e Ssa (8,3 cm) já estão incluídas, mas anos secos ou cheios diferem']];
   $('cartaQual').innerHTML = qual.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
-  // esquema dos níveis (figura de revista): eixo em metros, faixas de sizígia e quadratura, níveis rotulados
-  const W = 640, Ht = 500, AX = 92, XR = 300, TOP = 30, BOT = 430, hi = q.MHWS / 100 + .35, lo = -.3, Y = v => TOP + (hi - v / 100) / (hi - lo) * (BOT - TOP);
-  const fnt = 'ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif', ink = 'var(--ink,#222)', mut = 'var(--muted,#667)', ln = 'var(--line,#ccc)', wat = 'var(--water,#2f7283)', och = 'var(--ochre,#9d6c2b)';
-  let s = `<g font-family='${fnt}'>`;
-  for (let v = 0; v <= 3.01; v += .5) { const y = Y(v * 100); s += `<line x1="${AX}" x2="${XR}" y1="${y}" y2="${y}" stroke="${ln}" stroke-width="1"/><line x1="${AX - 6}" x2="${AX}" y1="${y}" y2="${y}" stroke="${ink}" stroke-width="1.2"/><text x="${AX - 11}" y="${y + 5}" text-anchor="end" font-size="18" fill="${mut}">${f(v, 1)}</text>`; }
-  s += `<line x1="${AX}" x2="${AX}" y1="${TOP}" y2="${BOT}" stroke="${ink}" stroke-width="1.4"/><text transform="translate(22 ${(TOP + BOT) / 2}) rotate(-90)" text-anchor="middle" font-size="18" fill="${mut}">Altura acima do NR (m)</text>`;
-  s += `<rect x="130" y="${Y(q.MHWS)}" width="130" height="${Y(q.MLWS) - Y(q.MHWS)}" style="fill:${wat};opacity:.14"/><rect x="152" y="${Y(q.MHWN)}" width="86" height="${Y(q.MLWN) - Y(q.MHWN)}" style="fill:${wat};opacity:.28"/>`;
-  const lv = [['MHWS', q.MHWS, 1.8], ['MHWN', q.MHWN, 1.8], ['MSL', q.Zo, 1.8, '7 4'], ['MLWN', q.MLWN, 1.8], ['MLWS', q.MLWS, 1.8], ['NR', 0, 3]];
-  for (const [n, v, wd, dash] of lv) {
-    const y = Y(v), isNR = n === 'NR', c2 = isNR ? och : ink;
-    s += `<line x1="${AX}" x2="${XR}" y1="${y}" y2="${y}" stroke="${c2}" stroke-width="${wd}" ${dash ? `stroke-dasharray="${dash}"` : ''}/>` +
-      `<text x="${XR + 12}" y="${y + 7}" font-size="22" font-weight="700" fill="${c2}">${n}</text><text x="${XR + 96}" y="${y + 7}" font-size="21" fill="${c2}">${f(v / 100, isNR ? 2 : 2)} m</text>`;
+  // esquema dos níveis (figura de revista): desenhado na largura real do contêiner, fontes em tamanho fixo (px)
+  function drawSvg() {
+    const svg = $('cartaSvg'), W = Math.max(300, Math.round(svg.parentNode.clientWidth || 560)), big = W >= 520, nar = W < 420;
+    const fs = { tick: big ? 14 : 12.5, name: big ? 17 : 14.5, val: big ? 16 : 14, dim: big ? 14 : 12 }, AX = big ? 62 : 50, XR = Math.round(AX + (W - AX) * (nar ? .40 : .36));
+    const TOP = 16, BOT = Math.round(Math.min(430, Math.max(250, W * .75))), Ht = BOT + 18, hi = q.MHWS / 100 + .3, lo = -.25, Y = v => TOP + (hi - v / 100) / (hi - lo) * (BOT - TOP);
+    const fnt = 'ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif', ink = 'var(--ink,#222)', mut = 'var(--muted,#667)', ln = 'var(--line,#ccc)', wat = 'var(--water,#2f7283)', och = 'var(--ochre,#9d6c2b)';
+    let s = `<g font-family='${fnt}'>`;
+    for (let v = 0; v <= 3.01; v += .5) { const y = Y(v * 100); s += `<line x1="${AX}" x2="${XR}" y1="${y}" y2="${y}" stroke="${ln}"/><line x1="${AX - 5}" x2="${AX}" y1="${y}" y2="${y}" stroke="${ink}"/><text x="${AX - 8}" y="${y + fs.tick * .35}" text-anchor="end" font-size="${fs.tick}" fill="${mut}">${f(v, 1)}</text>`; }
+    s += `<line x1="${AX}" x2="${AX}" y1="${TOP}" y2="${BOT}" stroke="${ink}" stroke-width="1.2"/><text transform="translate(${big ? 14 : 12} ${(TOP + BOT) / 2}) rotate(-90)" text-anchor="middle" font-size="${fs.tick}" fill="${mut}">Altura acima do NR (m)</text>`;
+    const bw = (XR - AX) * .78, bx = AX + (XR - AX) * .11;
+    s += `<rect x="${bx}" y="${Y(q.MHWS)}" width="${bw}" height="${Y(q.MLWS) - Y(q.MHWS)}" style="fill:${wat};opacity:.14"/><rect x="${bx + bw * .17}" y="${Y(q.MHWN)}" width="${bw * .66}" height="${Y(q.MLWN) - Y(q.MHWN)}" style="fill:${wat};opacity:.28"/>`;
+    const lv = [['MHWS', q.MHWS, 1.6], ['MHWN', q.MHWN, 1.6], ['MSL', q.Zo, 1.6, '6 4'], ['MLWN', q.MLWN, 1.6], ['MLWS', q.MLWS, 1.6], ['NR', 0, 2.6]];
+    for (const [n, v, wd, dash] of lv) {
+      const y = Y(v), isNR = n === 'NR', c2 = isNR ? och : ink;
+      s += `<line x1="${AX}" x2="${XR}" y1="${y}" y2="${y}" stroke="${c2}" stroke-width="${wd}" ${dash ? `stroke-dasharray="${dash}"` : ''}/><text x="${XR + 8}" y="${y + fs.name * .34}" fill="${c2}"><tspan font-size="${fs.name}" font-weight="700">${n}</tspan><tspan dx="7" font-size="${fs.val}">${m(v)} m</tspan></text>`;
+    }
+    if (!nar) {
+      const dim = (x0, a, b, label) => `<line x1="${x0}" x2="${x0}" y1="${Y(a) + 1}" y2="${Y(b) - 1}" stroke="${ink}" stroke-width="1.2" marker-start="url(#arr)" marker-end="url(#arr)"/><text transform="translate(${x0 - 7} ${(Y(a) + Y(b)) / 2}) rotate(-90)" text-anchor="middle" font-size="${fs.dim}" fill="${ink}">${label}</text>`;
+      s += `<defs><marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${ink}"/></marker></defs>` + dim(W - 8 - (big ? 34 : 28), q.MHWS, q.MLWS, `sizígia ${m(q.MHWS - q.MLWS)} m`) + dim(W - 10, q.MHWN, q.MLWN, `quadratura ${m(q.MHWN - q.MLWN)} m`);
+    }
+    svg.setAttribute('viewBox', `0 0 ${W} ${Ht}`); svg.setAttribute('height', Ht); svg.setAttribute('width', W); svg.innerHTML = s + '</g>';
   }
-  const dim = (x0, a, b, label) => `<line x1="${x0}" x2="${x0}" y1="${Y(a) + 1}" y2="${Y(b) - 1}" stroke="${ink}" stroke-width="1.3" marker-start="url(#arr)" marker-end="url(#arr)"/><text transform="translate(${x0 - 9} ${(Y(a) + Y(b)) / 2}) rotate(-90)" text-anchor="middle" font-size="18" fill="${ink}">${label}</text>`;
-  s += `<defs><marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${ink}"/></marker></defs>`;
-  s += dim(540, q.MHWS, q.MLWS, `sizígia ${m(q.MHWS - q.MLWS)} m`) + dim(598, q.MHWN, q.MLWN, `quadratura ${m(q.MHWN - q.MLWN)} m`) + '</g>';
-  $('cartaSvg').setAttribute('viewBox', `0 0 ${W} ${Ht}`); $('cartaSvg').innerHTML = s;
+  drawSvg(); let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(drawSvg, 120); });
+  if (window.ResizeObserver) { let lw = 0; new ResizeObserver(() => { const w = $('cartaSvg').parentNode.clientWidth; if (w && w !== lw) { lw = w; drawSvg(); } }).observe($('cartaSvg').parentNode); }
   $('cartaPrint').onclick = () => window.print();
 })();

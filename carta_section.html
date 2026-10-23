@@ -1,9 +1,9 @@
 <section id="carta" class="panel" role="tabpanel" aria-labelledby="tab-carta" hidden>
   <div class="sectionhead"><div><h2>Quadro de maré</h2><p class="sub">No formato das informações de maré das cartas náuticas · alturas em metros acima do NR</p></div><button class="chip noprint" id="cartaPrint" type="button">Imprimir / salvar PDF</button></div>
   <article class="carta-box" aria-label="Informações de maré de Fazendinha">
-    <header class="carta-head"><span>INFORMAÇÕES SOBRE A MARÉ</span><b>ATALAIA DE FAZENDINHA</b><i>Lat 00°03,4′ S · Long 051°06,5′ W · Fuso UTC−03</i></header>
+    <div class="carta-head"><span>INFORMAÇÕES SOBRE A MARÉ</span><b>ATALAIA DE FAZENDINHA</b><i>Lat 00°03,4′ S · Long 051°06,5′ W · Fuso UTC−03</i></div>
     <h3>Tabela 1. Informações sobre a maré</h3>
-    <table class="carta-tab carta-chart"><thead><tr><th rowspan="2">Lugar</th><th rowspan="2">Lat</th><th rowspan="2">Long</th><th rowspan="2">HWF&amp;C</th><th colspan="5">Alturas em metros sobre o NR</th></tr><tr><th>MHWS</th><th>MHWN</th><th>MLWN</th><th>MLWS</th><th>MSL</th></tr></thead><tbody id="cartaCarta"></tbody></table>
+    <div class="tablewrap-x"><table class="carta-tab carta-chart"><thead><tr><th rowspan="2">Lugar</th><th rowspan="2">Lat</th><th rowspan="2">Long</th><th rowspan="2">HWF&amp;C</th><th colspan="5">Alturas em metros sobre o NR</th></tr><tr><th>MHWS</th><th>MHWN</th><th>MLWN</th><th>MLWS</th><th>MSL</th></tr></thead><tbody id="cartaCarta"></tbody></table></div>
     <p class="carta-note">As duas últimas linhas reproduzem o quadro da carta náutica informada (Macapá e Companhia das Docas de Santana), para comparação. A primeira é Fazendinha, calculada neste aplicativo.</p>
     <div class="carta-grid">
       <div>
@@ -12,7 +12,7 @@
         <h3>Tabela 3. Dados gerais</h3>
         <table class="carta-tab" id="cartaGerais"><tbody></tbody></table>
       </div>
-      <figure class="carta-fig"><svg id="cartaSvg" role="img" aria-label="Esquema dos níveis de maré em relação ao NR" viewBox="0 0 640 500"></svg><figcaption class="fig-cap"><b>Figura 1.</b> Níveis de maré de Fazendinha em relação ao NR (metros). A faixa clara é a amplitude de sizígia e a escura, a de quadratura; MSL é o nível médio.</figcaption></figure>
+      <figure class="carta-fig"><svg id="cartaSvg" role="img" aria-label="Esquema dos níveis de maré em relação ao NR" viewBox="0 0 560 420"></svg><figcaption class="fig-cap"><b>Figura 1.</b> Níveis de maré de Fazendinha em relação ao NR (metros). A faixa clara é a amplitude de sizígia e a escura, a de quadratura; MSL é o nível médio.</figcaption></figure>
     </div>
     <h3>Tabela 4. Referência vertical, método e qualidade dos dados</h3>
     <table class="carta-tab" id="cartaQual"><tbody></tbody></table>
