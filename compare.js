@@ -79,25 +79,27 @@
       const why = Math.abs(s.bias) >= 10 ? ` O nível médio da água estava diferente do usual (rio ${s.bias > 0 ? 'mais baixo' : 'mais alto'} que o esperado), e isso explica boa parte do erro.` : '';
       $('cmpVerdict').innerHTML = `Nestes ${len} dias (${fmt(s.n)} horas) a previsão foi <b>${rating(s.rmse)}</b>: errou em média ${fmt(s.rmse)} cm.${why}`;
     }
-    drawMain(i0, i1, t0, t1); drawErr(i0, i1, t0, t1); table(ev); drawMonths();
+    sizeCanvases(); drawMain(i0, i1, t0, t1); drawErr(i0, i1, t0, t1); table(ev); drawMonths();
     $('cmpCursor').hidden = true; $('cmpTip').hidden = true;
   }
 
   /* ---------- gráficos (escalas fixas) ---------- */
+  const tall = () => (innerHeight >= 760 ? 1 : innerHeight >= 640 ? .85 : .7);
+  function sizeCanvases() { const k = tall(); $('cmpMain').setAttribute('height', Math.round(300 * k)); $('cmpErr').setAttribute('height', Math.round(130 * k)); $('cmpMonths').setAttribute('height', Math.round(190 * Math.max(k, .8))); }
   function setup(c) { const r = devicePixelRatio || 1, w = c.clientWidth, h = +c.getAttribute('height'); c.width = Math.round(w * r); c.height = Math.round(h * r); const x = c.getContext('2d'); x.setTransform(r, 0, 0, r, 0, 0); return { x, w, h }; }
-  function xticks(t0, t1, x, X, ph, Tp, h) {
-    const step = len <= 7 ? 1 : len <= 15 ? 2 : 5, grid = A.css('--chart-grid'), txt = A.css('--chart-text');
+  function xticks(t0, t1, x, X, ph, Tp, h, pw) {
+    const dayW = pw / len, step = Math.max(1, Math.ceil(56 / dayW)), grid = A.css('--chart-grid'), txt = A.css('--chart-text'), wd = dayW * step >= 64;
     x.textAlign = 'center'; x.fillStyle = txt; x.strokeStyle = grid; x.font = '11px system-ui';
     for (let k = 0, t = t0; t < t1; k++, t += DAY) {
       x.beginPath(); x.moveTo(X(t), Tp); x.lineTo(X(t), Tp + ph); x.stroke();
-      if (h && k % step === 0) x.fillText((len <= 7 ? WD[loc(t).getUTCDay()] + ' ' : '') + dm(t), X(t + DAY / 2), h - 6);
+      if (h && k % step === 0) x.fillText((wd ? WD[loc(t).getUTCDay()] + ' ' : '') + dm(t), X(t + DAY / 2), h - 6);
     }
   }
   function drawMain(i0, i1, t0, t1) {
     const { x, w, h } = setup($('cmpMain')), L = 48, R = 8, Tp = 8, B = 22, pw = w - L - R, ph = h - Tp - B;
     const X = t => L + (t - t0) / (t1 - t0) * pw, Y = v => Tp + ph - (v - Y_MAIN[0]) / (Y_MAIN[1] - Y_MAIN[0]) * ph;
     const grid = A.css('--chart-grid'), txt = A.css('--chart-text'), ink = A.css('--ink') || '#1c1c1c', p = pred();
-    x.lineWidth = 1; xticks(t0, t1, x, X, ph, Tp, h);
+    x.lineWidth = 1; xticks(t0, t1, x, X, ph, Tp, h, pw);
     x.textAlign = 'right'; x.fillStyle = txt; x.strokeStyle = grid;
     for (let v = 0; v <= 4; v++) { x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); x.fillText(v + ' m', L - 6, Y(v) + 4); }
     x.setLineDash([5, 4]); x.strokeStyle = txt; x.beginPath(); x.moveTo(L, Y(0)); x.lineTo(w - R, Y(0)); x.stroke(); x.setLineDash([]);
