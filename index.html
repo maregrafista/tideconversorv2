@@ -9,6 +9,7 @@
 <link rel="icon" href="logo.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="compare.css">
 </head>
 <body>
 <a class="skip" href="#main">Ir para o conteúdo</a>
@@ -285,38 +286,47 @@
 <!-- ============ PREVISTO × OBSERVADO ============ -->
 <section id="compare" class="panel" role="tabpanel" aria-labelledby="tab-compare" hidden>
   <div class="sectionhead">
-    <div><h2>Previsto × observado</h2><p class="sub">Compare a previsão com o que a régua registrou e veja o erro</p></div>
-    <div class="section-actions"><button class="textbutton" id="cmpCsv">Exportar CSV</button><button class="textbutton" data-method="compare">Como o erro é calculado</button></div>
+    <div><h2>Previsto × observado</h2><p class="sub">A previsão acertou? Compare com o que a régua de Fazendinha registrou.</p></div>
+    <button class="textbutton" id="cmpCsv">Baixar este período (CSV)</button>
   </div>
-  <p class="intro">A linha preta é o nível <b>observado</b> na régua de Fazendinha (valores horários). A linha verde é a <b>previsão</b> harmônica com componentes anuais, a que apresentou menos erros nos testes (RMSE de 12,1 cm no bloco 03, contra 17,7 cm só com marés e 23,7 cm com as constantes do bloco 04). O gráfico de baixo mostra o <b>erro</b> (previsto − observado): acima de zero, a previsão ficou mais alta que a água. Escolha um período, <b>arraste sobre o gráfico</b> para ampliar e veja a tabela de erros do trecho visível.</p>
 
-  <div class="card cmp-controls">
-    <div><span class="label">Período</span><div class="chips" id="cmpPresets"></div></div>
-    <div class="cmp-row">
-      <div><label class="label" for="cmpFrom">De</label><input type="date" id="cmpFrom"></div>
-      <div><label class="label" for="cmpTo">Até</label><input type="date" id="cmpTo"></div>
-      <div><label class="label" for="cmpRef">Referência da altura</label><select id="cmpRef"><option value="nr">Acima do NR (66,7 cm)</option><option value="zero">Acima do zero da régua</option></select></div>
+  <p class="intro">A <b>linha preta</b> é o nível que a régua registrou. A <b>linha verde</b> é o que a previsão dizia. Quanto mais coladas, melhor. Embaixo, as <b>barras</b> mostram a diferença hora a hora: laranja = previsão mais alta que a água, azul = mais baixa.</p>
+
+  <div class="card cmp-pick">
+    <span class="label">1 · Escolha o que quer ver</span>
+    <div class="chips" id="cmpPresets"></div>
+    <span class="label" style="margin-top:14px">2 · Ou navegue pelo tempo</span>
+    <div class="cmp-nav">
+      <button class="step" id="cmpPrev" type="button" aria-label="Período anterior">‹</button>
+      <input type="date" id="cmpDate" aria-label="Primeiro dia">
+      <button class="step" id="cmpNext" type="button" aria-label="Próximo período">›</button>
+      <div class="chips" id="cmpLen" role="group" aria-label="Duração"></div>
     </div>
-    
+    <p class="cmp-tag" id="cmpTag"></p>
   </div>
+
+  <div class="cmp-cards" id="cmpCards" aria-live="polite"></div>
+  <p class="cmp-verdict" id="cmpVerdict" aria-live="polite"></p>
 
   <div class="card">
-    <div class="legend" id="cmpLegend"></div>
-    <canvas id="cmpMain" height="340" aria-label="Nível observado e previsto"></canvas>
-    <canvas id="cmpErr" height="150" aria-label="Erro da previsão"></canvas>
-    <p class="readout" id="cmpReadout" aria-live="polite">Passe o cursor sobre o gráfico para ver os valores. Arraste para ampliar; duplo clique volta ao período escolhido.</p>
+    <div class="cmp-legend"><span><i style="background:#1c1c1c"></i>Observado (régua)</span><span><i style="background:#1b9664"></i>Previsto</span><span><i style="background:#eb6834"></i>previsto acima</span><span><i style="background:#3a7bd5"></i>previsto abaixo</span></div>
+    <div class="cmp-chart" id="cmpWrap">
+      <canvas id="cmpMain" height="300" aria-label="Nível observado e previsto"></canvas>
+      <canvas id="cmpErr" height="130" aria-label="Diferença entre previsto e observado"></canvas>
+      <div class="cmp-cursor" id="cmpCursor" hidden></div><div class="cmp-tip" id="cmpTip" hidden></div>
+    </div>
+    <p class="note">Escala fixa: altura em metros acima do NR (eixo de cima) e diferença em centímetros (eixo de baixo), a mesma em todos os períodos, para comparar um período com outro.</p>
   </div>
 
-  <div class="card"><h3>Erros no trecho visível</h3><p class="sub" id="cmpSub"></p><div class="tablewrap"><table id="cmpStats"></table></div></div>
+  <div class="card"><h3>Preamares e baixamares neste período</h3><p class="sub">A hora e a altura em que a água realmente chegou ao máximo e ao mínimo, contra o que a previsão dizia.</p><div class="tablewrap"><table id="cmpEvents"></table></div></div>
 
-  <div class="cmp-grid">
-    <div class="card"><h3>Previsto × observado</h3><canvas id="cmpScatter" height="320"></canvas><p class="note">Cada ponto é uma hora. Quanto mais perto da diagonal, melhor a previsão.</p></div>
-    <div class="card"><h3>Distribuição do erro</h3><canvas id="cmpHist" height="320"></canvas><p class="note">Número de horas por faixa de erro (cm). Uma boa previsão forma um pico estreito em zero.</p></div>
-  </div>
+  <div class="card"><h3>E nos outros meses?</h3><p class="sub">Erro típico de cada mês. Toque em uma barra para ver aquele mês.</p><canvas id="cmpMonths" height="190" aria-label="Erro típico por mês"></canvas>
+    <div class="cmp-legend"><span><i style="background:#1b9664"></i>teste independente (dados não usados no ajuste)</span><span><i style="background:#9aa39c"></i>dados usados no ajuste (erro menor, não é um teste)</span><span><i style="background:#d9a441"></i>registro irregular (após 11/08/2026)</span></div></div>
 
-  <details class="method"><summary>Como o erro é calculado</summary>
-    <p>As observações são médias de 5 min da régua reduzidas a valores horários (valor exato das HH:00, ou interpolação linear entre vizinhos com intervalo ≤ 60 min). Para cada hora, erro = previsto − observado, em cm. <b>Viés</b> é o erro médio; <b>RMSE</b> é a raiz do erro quadrático médio; <b>EAM</b> é o erro absoluto médio; <b>P95</b> é o erro absoluto que 95 % das horas não ultrapassam; <b>r</b> é a correlação.</p>
-    <p>Os períodos B01 a B04 são os blocos contínuos de 32 dias ou mais. A previsão harmônica foi ajustada em B02 (maré) e em B02 + B04 (componentes anuais): <b>B01 e B03 são dados independentes</b>, ou seja, não participaram do ajuste; no B02 e no B04 o erro é “dentro da amostra”. A tábua de Santana convertida só existe para 2026. Depois de 11/08/2026 o registrador grava de forma irregular, e as horas disponíveis são menos.</p>
+  <details><summary>Como ler estes números</summary>
+    <p><b>Erro típico (RMSE)</b>: diferença entre previsto e observado, em centímetros; erros grandes pesam mais. <b>Viés</b>: se a previsão ficou, em média, acima (+) ou abaixo (−) da água. <b>9 em cada 10 horas</b>: o erro máximo em 90 % das horas. <b>Horário</b>: diferença média entre a hora prevista e a observada para preamares e baixamares.</p>
+    <p><b>Avaliação:</b> até 10 cm, muito boa; até 15 cm, boa; até 25 cm, razoável; acima disso, fraca (a água do rio muda o nível médio e a previsão não acompanha).</p>
+    <p>A previsão é a harmônica de Fazendinha com as componentes anuais. As marés foram ajustadas com o bloco B02 (fev/2025 a jan/2026) e as componentes anuais com B02 + B04 (mar a jul/2026). <b>Dados fora desses períodos são teste</b>: nov–dez/2024 e jan–mar/2026. Nos períodos usados no ajuste o erro é menor por construção. As observações são valores horários da régua; depois de 11/08/2026 o registrador grava de forma irregular e há menos horas.</p>
   </details>
 </section>
 </main>

@@ -190,15 +190,5 @@ dialog::backdrop{background:rgba(10,20,15,.55)}
 html,body{overflow-x:hidden}
 
 .fc-pick .wide{grid-column:1/-1}
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
-.cmp-controls>div+div{margin-top:14px}
-.cmp-row{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:14px}
-.cmp-row input{width:100%;border:1.5px solid var(--line);border-radius:12px;background:var(--paper);padding:10px 12px;min-width:0}
-.cmp-models{display:flex;gap:18px;flex-wrap:wrap}
-.cmp-models label{display:flex;gap:6px;align-items:center;font-size:14px}
-.cmp-models i{width:12px;height:12px;border-radius:3px;display:inline-block}
-.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
-.row-sel{display:flex;gap:10px;align-items:center;margin:6px 0 10px}.row-sel select{width:auto}
-#cmpStats td.best{font-weight:600;color:var(--leaf)}
-@media (max-width:860px){.cmp-row{grid-template-columns:1fr}.cmp-grid{grid-template-columns:minmax(0,1fr)}}
+
 #compare canvas{width:100%;display:block;touch-action:pan-y}#cmpErr{margin-top:6px}.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}

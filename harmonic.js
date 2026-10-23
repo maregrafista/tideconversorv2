@@ -52,5 +52,5 @@
   // observações horárias (hora legal UTC−3 → ms UTC)
   const base = Date.UTC(2024, 0, 1), OBS_T = [], OBS_V = [];
   for (const [h0, vals] of H.obs) vals.forEach((v, i) => { OBS_T.push(base + (h0 + i + 3) * 36e5); OBS_V.push(v); });
-  window.TCH = { predictCm, extremes, OBS_T, OBS_V, NR: H.nr_cm, S0: H.S0_anual, quadro: H.quadro, blocks: H.blocks, comps: H.comps };
+  window.TCH = { predictCm, extremes, OBS_T, OBS_V, ev: H.ev, NR: H.nr_cm, S0: H.S0_anual, quadro: H.quadro, blocks: H.blocks, comps: H.comps };
 })();

@@ -1,179 +1,164 @@
 'use strict';
-/* Aba "Previsto × observado": série horária observada na régua contra três previsões, com erro, estatísticas e dispersão. */
+/* Aba "Previsto × observado": uma janela de 3 a 30 dias, escala fixa, resumo em linguagem direta,
+   tabela de preamares e baixamares e erro mês a mês. Nada é redesenhado ao passar o cursor. */
 (function () {
   const $ = id => document.getElementById(id), A = window.TCApp, TCH = window.TCH;
-  const T = TCH.OBS_T, V = TCH.OBS_V, NR = TCH.NR, N = T.length, H3 = 36e5, DAY = 864e5;
-  const MODELS = [
-    { k: 'harmA', label: 'Harmônica + componentes anuais', col: '#1b9664', on: true }
-  ];
-  const P = {};                       // previsões (cm acima do zero da régua) nas horas observadas, preenchidas sob demanda
+  const T = TCH.OBS_T, V = TCH.OBS_V, NR = TCH.NR, N = T.length, DAY = 864e5, H3 = 36e5, EPOCH = Date.UTC(2024, 0, 1);
+  const GREEN = '#1b9664', ORANGE = '#eb6834', BLUE = '#3a7bd5';
+  const Y_MAIN = [-0.2, 4.0], Y_ERR = 60;                     // escalas fixas (m acima do NR; cm de erro)
   const loc = ms => new Date(ms - 3 * H3), pad = n => String(n).padStart(2, '0');
-  const fdate = ms => { const d = loc(ms); return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`; };
-  const fdt = ms => { const d = loc(ms); return `${fdate(ms)} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`; };
+  const WD = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  const dm = ms => { const d = loc(ms); return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}`; };
+  const hm = ms => { const d = loc(ms); return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`; };
   const iso = ms => loc(ms).toISOString().slice(0, 10);
+  const dayStart = ms => { const d = loc(ms); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) + 3 * H3; };
   const parseLocal = s => Date.parse(s.length > 10 ? s + '-03:00' : s + 'T00:00:00-03:00');
-  function pred(k) {
-    if (P[k]) return P[k];
-    const a = new Float64Array(N);
-    for (let i = 0; i < N; i++) {
-      if (k === 'tabua') { const f = A.waterForecast(T[i], 'faz', null, false, 'tabua'); a[i] = f ? f.h * 100 + NR : NaN; }
-      else a[i] = TCH.predictCm(T[i], k === 'harmA');
-    }
-    return (P[k] = a);
-  }
-  const blk = n => TCH.blocks[n].map(parseLocal);
-  const PRESETS = [
-    { id: 'b3', label: 'Bloco 03 · independente', r: () => blk(3) },
-    { id: 'b1', label: 'Bloco 01 · seca de 2024', r: () => blk(1) },
-    { id: 'b2', label: 'Bloco 02 · ajuste', r: () => blk(2) },
-    { id: 'b4', label: 'Bloco 04 · ajuste', r: () => blk(4) },
-    { id: 'last', label: 'Últimos 30 dias com dado', r: () => [T[N - 1] - 30 * DAY, T[N - 1]] },
-    { id: 'all', label: 'Todo o período', r: () => [T[0], T[N - 1]] }
-  ];
-  let win = null, base = null, hover = -1, sel = null, built = false;
-  const ref = () => $('cmpRef').value, off = () => ref() === 'nr' ? NR : 0, toM = cm => (cm - off()) / 100;
+  const fmt = (v, n = 0) => A.fmt(v, n), sgn = (v, n = 0) => (v > 0.0049 ? '+' : v < -0.0049 ? '−' : '') + A.fmt(Math.abs(v), n);
   const lb = x => { let lo = 0, hi = N; while (lo < hi) { const m = (lo + hi) >> 1; if (T[m] < x) lo = m + 1; else hi = m; } return lo; };
-  const active = () => MODELS.filter(m => m.on);
-  const cache = {}; const conv = (arr, key) => { const ck = key + '|' + ref(); return cache[ck] || (cache[ck] = Float64Array.from(arr, toM)); };
+  const SPARSE = parseLocal('2026-08-11'), FIT = [TCH.blocks[2], TCH.blocks[4]].map(b => b.map(parseLocal)), B01 = TCH.blocks[1].map(parseLocal);
+  const inFit = t => FIT.some(([a, b]) => t >= a && t <= b);
+  let P = null; const pred = () => P || (P = Float64Array.from(T, t => TCH.predictCm(t, true)));
+  const m_ = cm => (cm - NR) / 100;
+  const PRESETS = [
+    { id: 'teste', label: 'Teste independente · fev/2026', start: '2026-02-09' },
+    { id: 'seca', label: 'Seca de 2024 · nov/2024', start: '2024-11-18' },
+    { id: 'ajuste', label: 'Usado no ajuste · mai/2025', start: '2025-05-12' },
+    { id: 'fim', label: 'Últimos dados · out/2026', start: null }
+  ];
+  const LENS = [3, 7, 15, 30];
+  let start = 0, len = 7, active = null, built = false, G = null, month = null;
+  const first = dayStart(T[0]), last = dayStart(T[N - 1]);
 
   function build() {
     $('cmpPresets').innerHTML = PRESETS.map(p => `<button class="chip" data-p="${p.id}" aria-pressed="false">${p.label}</button>`).join('');
-    $('cmpPresets').onclick = e => { const b = e.target.closest('[data-p]'); if (b) setPreset(b.dataset.p); };
-    $('cmpRef').onchange = draw;
-    $('cmpFrom').onchange = $('cmpTo').onchange = () => { const a = parseLocal($('cmpFrom').value), b = parseLocal($('cmpTo').value) + DAY; if (a < b) { win = [a, b]; base = win.slice(); setPressed(null); draw(); } };
+    $('cmpLen').innerHTML = LENS.map(d => `<button class="chip" data-d="${d}" aria-pressed="false">${d} dias</button>`).join('');
+    $('cmpPresets').onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; const p = PRESETS.find(x => x.id === b.dataset.p); len = 7; go(p.start ? parseLocal(p.start) : last - 6 * DAY, p.id); };
+    $('cmpLen').onclick = e => { const b = e.target.closest('[data-d]'); if (b) { len = +b.dataset.d; go(start, active); } };
+    $('cmpPrev').onclick = () => go(start - len * DAY, null);
+    $('cmpNext').onclick = () => go(start + len * DAY, null);
+    $('cmpDate').onchange = () => { if ($('cmpDate').value) go(parseLocal($('cmpDate').value), null); };
     $('cmpCsv').onclick = exportCsv;
-    attach($('cmpMain')); attach($('cmpErr'));
-    window.addEventListener('resize', () => { if (!$('compare').hidden) draw(); });
-    built = true; setPreset('b3');
+    $('cmpMonths').onclick = e => { const r = $('cmpMonths').getBoundingClientRect(), i = Math.floor((e.clientX - r.left - mx.L) / mx.bw); if (month && i >= 0 && i < month.list.length) { len = 7; go(month.list[i].t0, null); } };
+    const wrap = $('cmpWrap');
+    wrap.addEventListener('pointermove', hover); wrap.addEventListener('pointerleave', () => { $('cmpCursor').hidden = true; $('cmpTip').hidden = true; });
+    window.addEventListener('resize', () => { if (!$('compare').hidden) render(); });
+    built = true; go(parseLocal(PRESETS[0].start), 'teste');
   }
-  function setPressed(id) { document.querySelectorAll('#cmpPresets [data-p]').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === id)); }
-  function setPreset(id) { const p = PRESETS.find(x => x.id === id); base = p.r(); win = base.slice(); setPressed(id); draw(); }
-  function show() { if (!built) build(); else draw(); }
+  function go(s, preset) { start = Math.max(first, Math.min(dayStart(s), last - (len - 1) * DAY)); active = preset; render(); }
+  function show() { if (!built) build(); else render(); }
 
-  /* ---------- desenho ---------- */
+  /* ---------- estatísticas da janela ---------- */
+  function stats(i0, i1) {
+    const p = pred(); let n = 0, sp = 0, sq = 0; const ab = [];
+    for (let i = i0; i < i1; i++) { const e = p[i] - V[i]; n++; sp += e; sq += e * e; ab.push(Math.abs(e)); }
+    if (!n) return null; ab.sort((a, b) => a - b); return { n, bias: sp / n, rmse: Math.sqrt(sq / n), p90: ab[Math.floor(.9 * (n - 1))] };
+  }
+  const events = (t0, t1) => TCH.ev.map(e => ({ t: EPOCH + (e[0] + 180) * 6e4, type: e[1] ? 'Baixamar' : 'Preamar', obs: e[2] / 10, prev: e[3] / 10, dt: e[4] })).filter(e => e.t >= t0 && e.t < t1);
+  const rating = r => r <= 10 ? 'muito boa' : r <= 15 ? 'boa' : r <= 25 ? 'razoável' : 'fraca';
+
+  function render() {
+    const t0 = start, t1 = start + len * DAY, i0 = lb(t0), i1 = lb(t1), s = stats(i0, i1), ev = events(t0, t1);
+    $('cmpDate').value = iso(t0); $('cmpDate').min = iso(first); $('cmpDate').max = iso(last);
+    document.querySelectorAll('#cmpPresets [data-p]').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === active));
+    document.querySelectorAll('#cmpLen [data-d]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.d === len));
+    let fitH = 0; for (let i = i0; i < i1; i++) if (inFit(T[i])) fitH++;
+    const fit = i1 > i0 && fitH / (i1 - i0) > .5, sparse = t0 >= SPARSE, drought = t0 >= B01[0] - DAY && t0 <= B01[1];
+    const tag = $('cmpTag'); tag.className = 'cmp-tag ' + (sparse ? 'sparse' : fit ? 'fit' : 'test');
+    tag.textContent = (fit ? 'Período usado no ajuste da previsão: o erro aqui é menor do que seria em dados novos.' : 'Período de teste: estes dados não foram usados para ajustar a previsão. É o teste mais honesto.') +
+      (drought ? ' Em 2024 houve seca extrema: o rio estava bem abaixo do normal.' : '') + (sparse ? ' Depois de 11/08/2026 a régua grava de forma irregular, com menos horas.' : '');
+    if (!s) { $('cmpCards').innerHTML = ''; $('cmpVerdict').textContent = 'Sem observações neste período. Escolha outro.'; }
+    else {
+      const evT = ev.length ? ev.reduce((a, e) => a + Math.abs(e.dt), 0) / ev.length : null;
+      const bTxt = Math.abs(s.bias) < 1 ? 'sem tendência de ficar acima ou abaixo da água' : `a previsão ficou, em média, ${fmt(Math.abs(s.bias))} cm ${s.bias > 0 ? 'acima' : 'abaixo'} da água`;
+      $('cmpCards').innerHTML = [
+        ['Erro típico', `${fmt(s.rmse)} <small>cm</small>`, 'diferença típica entre o previsto e o observado'],
+        ['Tendência', `${sgn(s.bias)} <small>cm</small>`, bTxt],
+        ['9 em cada 10 horas', `&lt; ${fmt(s.p90)} <small>cm</small>`, 'o erro foi menor que isso em 90 % das horas'],
+        ['Horário da maré', evT === null ? '—' : `${fmt(evT)} <small>min</small>`, evT === null ? 'sem preamar ou baixamar completa neste período' : `diferença média entre a hora prevista e a observada (${ev.length} marés)`]
+      ].map(c => `<div class="cmp-card"><div class="k">${c[0]}</div><div class="v">${c[1]}</div><div class="s">${c[2]}</div></div>`).join('');
+      const why = Math.abs(s.bias) >= 10 ? ` O nível médio da água estava diferente do usual (rio ${s.bias > 0 ? 'mais baixo' : 'mais alto'} que o esperado), e isso explica boa parte do erro.` : '';
+      $('cmpVerdict').innerHTML = `Nestes ${len} dias (${fmt(s.n)} horas) a previsão foi <b>${rating(s.rmse)}</b>: errou em média ${fmt(s.rmse)} cm.${why}`;
+    }
+    drawMain(i0, i1, t0, t1); drawErr(i0, i1, t0, t1); table(ev); drawMonths();
+    $('cmpCursor').hidden = true; $('cmpTip').hidden = true;
+  }
+
+  /* ---------- gráficos (escalas fixas) ---------- */
   function setup(c) { const r = devicePixelRatio || 1, w = c.clientWidth, h = +c.getAttribute('height'); c.width = Math.round(w * r); c.height = Math.round(h * r); const x = c.getContext('2d'); x.setTransform(r, 0, 0, r, 0, 0); return { x, w, h }; }
-  function ticks(t0, t1) {
-    const span = (t1 - t0) / DAY, steps = [0.25, 0.5, 1, 2, 5, 7, 14, 30, 61, 91, 182]; let st = steps.find(s => span / s <= 9) || 182;
-    const out = [], o = 3 * H3; let t = Math.ceil((t0 - o) / (st * DAY)) * st * DAY + o;
-    if (st >= 30) { const d = loc(t0); let y = d.getUTCFullYear(), m = d.getUTCMonth() + 1; const k = Math.round(st / 30.4); for (;;) { const ms = Date.UTC(y, m, 1) + o; if (ms > t1) break; if (ms >= t0) out.push(ms); m += k; while (m > 11) { m -= 12; y++; } } return { out, fmt: ms => { const d = loc(ms); return pad(d.getUTCMonth() + 1) + '/' + String(d.getUTCFullYear()).slice(2); } }; }
-    for (; t <= t1; t += st * DAY) out.push(t);
-    return { out, fmt: st < 1 ? ms => { const d = loc(ms); return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + ' ' + pad(d.getUTCHours()) + 'h'; } : ms => { const d = loc(ms); return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1); } };
-  }
-  function series(x, arr, i0, i1, X, Y, col, wid, plotW) {
-    x.strokeStyle = col; x.lineWidth = wid; const cnt = i1 - i0; x.beginPath();
-    if (cnt > plotW * 4) {                      // muitos pontos: envelope mínimo/máximo por coluna
-      const bucket = new Map();
-      for (let i = i0; i < i1; i++) { const v = arr[i]; if (!Number.isFinite(v)) continue; const px = Math.round(X(T[i])), b = bucket.get(px); if (!b) bucket.set(px, [v, v]); else { if (v < b[0]) b[0] = v; if (v > b[1]) b[1] = v; } }
-      for (const [px, [lo, hi]] of bucket) { x.moveTo(px + .5, Y(lo)); x.lineTo(px + .5, Y(hi) - (lo === hi ? 1 : 0)); }
-    } else {
-      let prev = -1;
-      for (let i = i0; i < i1; i++) { const v = arr[i]; if (!Number.isFinite(v)) { prev = -1; continue; } if (prev >= 0 && T[i] - T[prev] <= 90 * 6e4) x.lineTo(X(T[i]), Y(v)); else x.moveTo(X(T[i]), Y(v)); prev = i; }
+  function xticks(t0, t1, x, X, ph, Tp, h) {
+    const step = len <= 7 ? 1 : len <= 15 ? 2 : 5, grid = A.css('--chart-grid'), txt = A.css('--chart-text');
+    x.textAlign = 'center'; x.fillStyle = txt; x.strokeStyle = grid; x.font = '11px system-ui';
+    for (let k = 0, t = t0; t < t1; k++, t += DAY) {
+      x.beginPath(); x.moveTo(X(t), Tp); x.lineTo(X(t), Tp + ph); x.stroke();
+      if (h && k % step === 0) x.fillText((len <= 7 ? WD[loc(t).getUTCDay()] + ' ' : '') + dm(t), X(t + DAY / 2), h - 6);
     }
-    x.stroke();
   }
-  function frame(c, yr, unit, yfmt) {
-    const { x, w, h } = setup(c), L = 54, R = 10, Tp = 8, B = 24, pw = w - L - R, ph = h - Tp - B, [t0, t1] = win;
-    const X = t => L + (t - t0) / (t1 - t0) * pw, Y = v => Tp + ph - (v - yr[0]) / (yr[1] - yr[0]) * ph;
-    const grid = A.css('--chart-grid'), txt = A.css('--chart-text'); x.font = '11px system-ui'; x.lineWidth = 1;
-    const rng = yr[1] - yr[0], st = [0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10, 20, 50].find(s => rng / s <= 7) || 50;
+  function drawMain(i0, i1, t0, t1) {
+    const { x, w, h } = setup($('cmpMain')), L = 48, R = 8, Tp = 8, B = 22, pw = w - L - R, ph = h - Tp - B;
+    const X = t => L + (t - t0) / (t1 - t0) * pw, Y = v => Tp + ph - (v - Y_MAIN[0]) / (Y_MAIN[1] - Y_MAIN[0]) * ph;
+    const grid = A.css('--chart-grid'), txt = A.css('--chart-text'), ink = A.css('--ink') || '#1c1c1c', p = pred();
+    x.lineWidth = 1; xticks(t0, t1, x, X, ph, Tp, h);
     x.textAlign = 'right'; x.fillStyle = txt; x.strokeStyle = grid;
-    for (let v = Math.ceil(yr[0] / st) * st; v <= yr[1] + 1e-9; v += st) { x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); x.fillText(yfmt(v), L - 6, Y(v) + 4); }
-    const tk = ticks(t0, t1); x.textAlign = 'center';
-    for (const t of tk.out) { x.beginPath(); x.moveTo(X(t), Tp); x.lineTo(X(t), Tp + ph); x.stroke(); x.fillText(tk.fmt(t), X(t), h - 8); }
-    x.fillStyle = txt; x.textAlign = 'left'; x.fillText(unit, 4, 12);
-    return { x, w, h, L, R, Tp, ph, pw, X, Y, inv: px => win[0] + (px - L) / pw * (win[1] - win[0]) };
+    for (let v = 0; v <= 4; v++) { x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); x.fillText(v + ' m', L - 6, Y(v) + 4); }
+    x.setLineDash([5, 4]); x.strokeStyle = txt; x.beginPath(); x.moveTo(L, Y(0)); x.lineTo(w - R, Y(0)); x.stroke(); x.setLineDash([]);
+    x.textAlign = 'left'; x.fillText('NR', L + 4, Y(0) - 4);
+    const line = (arr, col, wd) => { x.strokeStyle = col; x.lineWidth = wd; x.beginPath(); let prev = -1; for (let i = i0; i < i1; i++) { const v = m_(arr[i]); if (prev >= 0 && T[i] - T[prev] <= 90 * 6e4) x.lineTo(X(T[i]), Y(v)); else x.moveTo(X(T[i]), Y(v)); prev = i; } x.stroke(); };
+    line(p, GREEN, 2.6); line(V, ink, 1.6);
+    G = { L, R, pw, w, t0, t1, i0, i1 };
   }
-  let G1 = null, G2 = null;
-  function draw() { render(true); }
-  function render(full) {
-    if (!win) return;
-    const [t0, t1] = win, i0 = lb(t0), i1 = lb(t1 + 1), ms = active(), unit = ref() === 'nr' ? 'm acima do NR' : 'm acima do zero da régua';
-    if (full) { $('cmpFrom').value = iso(t0); $('cmpTo').value = iso(t1 - 1);
-    $('cmpLegend').innerHTML = `<span><i style="background:#222"></i>Observado</span>` + ms.map(m => `<span><i style="background:${m.col}"></i>${m.label}</span>`).join(''); }
-    // faixa vertical
-    let lo = Infinity, hi = -Infinity; const arrs = [V, ...ms.map(m => pred(m.k))];
-    for (const a of arrs) for (let i = i0; i < i1; i++) { const v = a[i]; if (Number.isFinite(v)) { if (v < lo) lo = v; if (v > hi) hi = v; } }
-    if (!Number.isFinite(lo)) { lo = 100; hi = 300; }
-    const padv = Math.max(10, (hi - lo) * .06); const yr = [toM(lo - padv), toM(hi + padv)];
-    G1 = frame($('cmpMain'), yr, unit, v => v.toFixed(v % 1 ? 2 : 1).replace('.', ','));
-    const dark = matchMedia('(prefers-color-scheme:dark)').matches, ink = dark ? '#eee' : '#1c1c1c';
-    series(G1.x, conv(V, 'obs'), i0, i1, G1.X, G1.Y, ink, 1.6, G1.pw);
-    G1.x.globalAlpha = .85; for (const m of ms) series(G1.x, conv(pred(m.k), m.k), i0, i1, G1.X, G1.Y, m.col, 1.3, G1.pw); G1.x.globalAlpha = 1;
-    // erro
-    let em = 0; const errs = ms.map(m => { const p = pred(m.k), e = new Float64Array(N).fill(NaN); for (let i = i0; i < i1; i++) { const v = p[i] - V[i]; if (Number.isFinite(v)) { e[i] = v; if (Math.abs(v) > em) em = Math.abs(v); } } return e; });
-    const lim = Math.max(20, Math.ceil(Math.min(em, 150) / 10) * 10);
-    G2 = frame($('cmpErr'), [-lim, lim], 'erro (cm)', v => Math.round(v));
-    G2.x.strokeStyle = A.css('--chart-text'); G2.x.setLineDash([4, 3]); G2.x.beginPath(); G2.x.moveTo(G2.L, G2.Y(0)); G2.x.lineTo(G2.w - G2.R, G2.Y(0)); G2.x.stroke(); G2.x.setLineDash([]);
-    ms.forEach((m, k) => series(G2.x, errs[k], i0, i1, G2.X, G2.Y, m.col, 1.4, G2.pw));
-    // cursor e seleção
-    for (const g of [G1, G2]) {
-      if (hover >= g.L && hover <= g.w - g.R) { g.x.strokeStyle = A.css('--ochre'); g.x.lineWidth = 1; g.x.beginPath(); g.x.moveTo(hover, g.Tp); g.x.lineTo(hover, g.Tp + g.ph); g.x.stroke(); }
-      if (sel) { const a = Math.min(sel[0], sel[1]), b = Math.max(sel[0], sel[1]); g.x.fillStyle = 'rgba(40,110,200,.15)'; g.x.fillRect(a, g.Tp, b - a, g.ph); }
-    }
-    if (full) { stats(i0, i1, ms); drawScatter(); drawHist(i0, i1, ms); }
+  function drawErr(i0, i1, t0, t1) {
+    const { x, w, h } = setup($('cmpErr')), L = 48, R = 8, Tp = 6, B = 6, pw = w - L - R, ph = h - Tp - B, p = pred();
+    const X = t => L + (t - t0) / (t1 - t0) * pw, Y = v => Tp + ph / 2 - v / Y_ERR * ph / 2, grid = A.css('--chart-grid'), txt = A.css('--chart-text');
+    x.font = '11px system-ui'; x.strokeStyle = grid; x.fillStyle = txt; x.textAlign = 'right';
+    for (const v of [-60, -30, 0, 30, 60]) { x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); x.fillText((v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' cm', L - 6, Y(v) + 4); }
+    for (let t = t0; t < t1; t += DAY) { x.beginPath(); x.moveTo(X(t), Tp); x.lineTo(X(t), Tp + ph); x.stroke(); }
+    const bw = Math.max(1, pw / (len * 24) * .85);
+    for (let i = i0; i < i1; i++) { const e = Math.max(-Y_ERR, Math.min(Y_ERR, p[i] - V[i])); x.fillStyle = e > 0 ? ORANGE : BLUE; const y0 = Y(0), y1 = Y(e); x.fillRect(X(T[i]) - bw / 2, Math.min(y0, y1), bw, Math.max(1, Math.abs(y1 - y0))); }
+    x.strokeStyle = txt; x.lineWidth = 1; x.beginPath(); x.moveTo(L, Y(0)); x.lineTo(w - R, Y(0)); x.stroke();
   }
-  /* ---------- estatísticas ---------- */
-  function stat(k, i0, i1) {
-    const p = pred(k); let n = 0, sp = 0, sq = 0, so = 0, spp = 0, soo = 0, spo = 0; const ab = [];
-    for (let i = i0; i < i1; i++) { const e = p[i] - V[i]; if (!Number.isFinite(e)) continue; n++; sp += e; sq += e * e; ab.push(Math.abs(e)); so += V[i]; soo += V[i] * V[i]; spp += p[i] * p[i]; spo += p[i] * V[i]; }
-    if (!n) return null; ab.sort((a, b) => a - b); const mp = (so + sp) / n, mo = so / n;
-    const cov = spo / n - mp * mo, vp = spp / n - mp * mp, vo = soo / n - mo * mo;
-    return { n, bias: sp / n, rmse: Math.sqrt(sq / n), mae: ab.reduce((a, b) => a + b, 0) / n, p95: ab[Math.floor(.95 * (n - 1))], r: cov / Math.sqrt(vp * vo) };
+  /* cursor e dica: elementos HTML, sem redesenhar os gráficos */
+  function hover(e) {
+    if (!G) return; const r = $('cmpWrap').getBoundingClientRect(), px = e.clientX - r.left;
+    if (px < G.L || px > G.w - G.R) { $('cmpCursor').hidden = true; $('cmpTip').hidden = true; return; }
+    const t = G.t0 + (px - G.L) / G.pw * (G.t1 - G.t0), i = lb(t), k = i > G.i0 && (i >= G.i1 || Math.abs(T[i - 1] - t) < Math.abs(T[i] - t)) ? i - 1 : i;
+    if (k < G.i0 || k >= G.i1) { $('cmpCursor').hidden = true; $('cmpTip').hidden = true; return; }
+    const o = m_(V[k]), p = m_(pred()[k]), d = (p - o) * 100, cur = $('cmpCursor'), tip = $('cmpTip');
+    cur.hidden = false; cur.style.left = (G.L + (T[k] - G.t0) / (G.t1 - G.t0) * G.pw) + 'px'; tip.hidden = false;
+    tip.innerHTML = `<b>${WD[loc(T[k]).getUTCDay()]} ${dm(T[k])} ${hm(T[k])}</b><br>Observado: ${fmt(o, 2)} m<br>Previsto: ${fmt(p, 2)} m<br>Diferença: ${sgn(d)} cm${Math.abs(d) < 1 ? '' : d > 0 ? ' (previsto acima)' : ' (previsto abaixo)'}`;
+    const cx = parseFloat(cur.style.left), tw = tip.offsetWidth; tip.style.left = (cx + tw + 16 > r.width ? cx - tw - 10 : cx + 10) + 'px';
   }
-  function stats(i0, i1, ms) {
-    const f = (v, d = 1) => A.fmt(v, d), rows = ms.map(m => ({ m, s: stat(m.k, i0, i1) })), valid = rows.filter(r => r.s), best = valid.length > 1 ? Math.min(...valid.map(r => r.s.rmse)) : -1;
-    $('cmpSub').textContent = `${fdt(win[0])} a ${fdt(win[1])} · ${A.fmt(i1 - i0, 0)} horas observadas no trecho. Erro = previsto − observado, em cm.`;
-    $('cmpStats').innerHTML = '<thead><tr><th>Modelo</th><th>Horas</th><th>Viés</th><th>RMSE</th><th>EAM</th><th>P95</th><th>r</th></tr></thead><tbody>' +
-      rows.map(({ m, s }) => s ? `<tr><td><i style="background:${m.col};display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px"></i>${m.label}</td><td>${A.fmt(s.n, 0)}</td><td>${A.signed(s.bias)}</td><td class="${s.rmse === best ? 'best' : ''}">${f(s.rmse)}</td><td>${f(s.mae)}</td><td>${f(s.p95)}</td><td>${f(s.r, 3)}</td></tr>` : `<tr><td>${m.label}</td><td colspan="6">sem previsão neste período</td></tr>`).join('') + '</tbody>';
+  /* ---------- tabela de preamares e baixamares ---------- */
+  function table(ev) {
+    const el = $('cmpEvents');
+    if (!ev.length) { el.innerHTML = '<tbody><tr><td>Sem preamares e baixamares completas neste período.</td></tr></tbody>'; return; }
+    el.innerHTML = '<thead><tr><th>Maré</th><th>Quando (observado)</th><th>Hora prevista</th><th>Altura observada</th><th>Altura prevista</th><th>Erro de altura</th></tr></thead><tbody>' +
+      ev.map(e => { const ph = hm(e.t + e.dt * 6e4), da = e.prev - e.obs; return `<tr><td>${e.type}</td><td>${WD[loc(e.t).getUTCDay()]} ${dm(e.t)} ${hm(e.t)}</td><td class="${Math.abs(e.dt) > 25 ? 'bad' : ''}">${ph} (${e.dt === 0 ? 'igual' : sgn(e.dt) + ' min'})</td><td>${fmt(e.obs / 100, 2)} m</td><td>${fmt(e.prev / 100, 2)} m</td><td class="${Math.abs(da) > 20 ? 'bad' : Math.abs(da) <= 10 ? 'good' : ''}">${sgn(da)} cm</td></tr>`; }).join('') + '</tbody>';
   }
-  function drawScatter() {
-    const c = $('cmpScatter'); if (!c.clientWidth || !win) return; const { x, w, h } = setup(c), k = 'harmA', p = pred(k), i0 = lb(win[0]), i1 = lb(win[1] + 1);
-    let lo = Infinity, hi = -Infinity; for (let i = i0; i < i1; i++) { if (Number.isFinite(p[i])) { lo = Math.min(lo, p[i], V[i]); hi = Math.max(hi, p[i], V[i]); } }
-    if (!Number.isFinite(lo)) { x.fillStyle = A.css('--chart-text'); x.fillText('sem previsão neste período', 20, 30); return; }
-    lo = toM(lo) - .1; hi = toM(hi) + .1; const L = 44, B = 28, S = Math.min(w - L - 10, h - B - 10), X = v => L + (v - lo) / (hi - lo) * S, Y = v => 10 + S - (v - lo) / (hi - lo) * S;
-    const grid = A.css('--chart-grid'), txt = A.css('--chart-text'); x.font = '11px system-ui'; x.strokeStyle = grid; x.fillStyle = txt; x.textAlign = 'right';
-    const st = [0.1, 0.2, 0.5, 1].find(s => (hi - lo) / s <= 6) || 1;
-    for (let v = Math.ceil(lo / st) * st; v <= hi; v += st) { x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(L + S, Y(v)); x.stroke(); x.fillText(v.toFixed(1).replace('.', ','), L - 5, Y(v) + 4); x.textAlign = 'center'; x.fillText(v.toFixed(1).replace('.', ','), X(v), 10 + S + 16); x.beginPath(); x.moveTo(X(v), 10); x.lineTo(X(v), 10 + S); x.stroke(); x.textAlign = 'right'; }
-    x.strokeStyle = txt; x.setLineDash([4, 3]); x.beginPath(); x.moveTo(X(lo), Y(lo)); x.lineTo(X(hi), Y(hi)); x.stroke(); x.setLineDash([]);
-    x.textAlign = 'left'; x.fillText('observado (m) →', L, h - 4); x.save(); x.translate(10, 10 + S / 2); x.rotate(-Math.PI / 2); x.textAlign = 'center'; x.fillText('previsto (m)', 0, 0); x.restore();
-    x.fillStyle = MODELS.find(m => m.k === k).col; x.globalAlpha = .45; const stp = Math.max(1, Math.floor((i1 - i0) / 5000));
-    for (let i = i0; i < i1; i += stp) if (Number.isFinite(p[i])) { x.beginPath(); x.arc(X(toM(V[i])), Y(toM(p[i])), 2.4, 0, 7); x.fill(); } x.globalAlpha = 1;
+  /* ---------- erro mês a mês (escala fixa) ---------- */
+  const mx = { L: 46, bw: 1 };
+  function monthsData() {
+    if (month) return month; const p = pred(), acc = new Map();
+    for (let i = 0; i < N; i++) { const d = loc(T[i]), k = d.getUTCFullYear() * 12 + d.getUTCMonth(), e = p[i] - V[i]; let a = acc.get(k); if (!a) acc.set(k, a = { y: d.getUTCFullYear(), m: d.getUTCMonth(), n: 0, sq: 0, fit: 0, t0: Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) + 3 * H3 }); a.n++; a.sq += e * e; if (inFit(T[i])) a.fit++; }
+    const list = [...acc.values()].filter(a => a.n >= 48).map(a => ({ ...a, rmse: Math.sqrt(a.sq / a.n), kind: a.t0 >= SPARSE - 11 * DAY ? 'sparse' : a.fit / a.n > .5 ? 'fit' : 'test' }));
+    return (month = { list });
   }
-  function drawHist(i0, i1, ms) {
-    const c = $('cmpHist'); if (!c.clientWidth) return; const { x, w, h } = setup(c), bins = 30, lo = -60, wd = 120 / bins, counts = ms.map(m => { const p = pred(m.k), a = new Array(bins).fill(0); for (let i = i0; i < i1; i++) { const e = p[i] - V[i]; if (Number.isFinite(e)) a[Math.max(0, Math.min(bins - 1, Math.floor((e - lo) / wd)))]++; } return a; });
-    const mx = Math.max(1, ...counts.flat()), L = 44, B = 28, pw = w - L - 10, ph = h - B - 12, grid = A.css('--chart-grid'), txt = A.css('--chart-text');
-    x.font = '11px system-ui'; x.fillStyle = txt; x.strokeStyle = grid; x.textAlign = 'right';
-    for (let k = 0; k <= 4; k++) { const v = mx * k / 4, y = 12 + ph - ph * k / 4; x.beginPath(); x.moveTo(L, y); x.lineTo(L + pw, y); x.stroke(); x.fillText(Math.round(v), L - 5, y + 4); }
-    x.textAlign = 'center'; for (let e = -60; e <= 60; e += 20) { const px = L + (e - lo) / 120 * pw; x.fillText(e, px, h - 12); }
-    x.fillText('erro (cm) · eixo vertical: nº de horas', L + pw / 2, h - 1);
-    const bw = pw / bins; ms.forEach((m, k) => { x.fillStyle = m.col; counts[k].forEach((cnt, j) => { const bh = cnt / mx * ph, sw = bw / ms.length; x.fillRect(L + j * bw + k * sw + 1, 12 + ph - bh, Math.max(1, sw - 1), bh); }); });
-    x.strokeStyle = txt; x.lineWidth = 1.5; const z = L + (0 - lo) / 120 * pw; x.beginPath(); x.moveTo(z, 12); x.lineTo(z, 12 + ph); x.stroke();
-  }
-  /* ---------- interação ---------- */
-  function attach(c) {
-    const pos = e => e.clientX - c.getBoundingClientRect().left;
-    c.addEventListener('pointermove', e => {
-      const x = pos(e); hover = x; if (sel) sel[1] = x;
-      const g = G1, t = g.inv(x), i = lb(t), k = i > 0 && Math.abs(T[i - 1] - t) < Math.abs((T[i] ?? Infinity) - t) ? i - 1 : i;
-      if (k < N && x >= g.L && x <= g.w - g.R) {
-        const parts = active().map(m => { const p = pred(m.k)[k]; return Number.isFinite(p) ? `<b style="color:${m.col}">${m.label.split(' (')[0]}</b> ${A.fmt(toM(p))} m (erro ${A.signed(p - V[k])} cm)` : null; }).filter(Boolean);
-        $('cmpReadout').innerHTML = `${fdt(T[k])} · <b>observado ${A.fmt(toM(V[k]))} m</b> · ` + parts.join(' · ');
-      }
-      render(false);
+  const MN = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  function drawMonths() {
+    const { x, w, h } = setup($('cmpMonths')), list = monthsData().list, L = mx.L, R = 6, Tp = 14, B = 22, pw = w - L - R, ph = h - Tp - B, bw = pw / list.length, Y = v => Tp + ph - v / 60 * ph;
+    mx.bw = bw; const grid = A.css('--chart-grid'), txt = A.css('--chart-text'), cur = loc(start); x.font = '11px system-ui'; x.strokeStyle = grid; x.fillStyle = txt; x.textAlign = 'right';
+    for (const v of [0, 20, 40, 60]) { x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); x.fillText(v + ' cm', L - 5, Y(v) + 4); }
+    list.forEach((a, i) => {
+      const col = a.kind === 'test' ? GREEN : a.kind === 'fit' ? '#9aa39c' : '#d9a441', xa = L + i * bw + bw * .15, wd = bw * .7, top = Y(Math.min(a.rmse, 60)), sel = a.y === cur.getUTCFullYear() && a.m === cur.getUTCMonth();
+      x.fillStyle = col; x.fillRect(xa, top, wd, Y(0) - top);
+      if (sel) { x.strokeStyle = A.css('--ink') || '#000'; x.lineWidth = 2; x.strokeRect(xa - 1, top - 1, wd + 2, Y(0) - top + 2); x.lineWidth = 1; }
+      x.fillStyle = txt; x.textAlign = 'center'; x.fillText(fmt(a.rmse), xa + wd / 2, top - 3);
+      x.fillText(MN[a.m] + (a.m === 0 || i === 0 ? '/' + String(a.y).slice(2) : ''), xa + wd / 2, h - 6);
     });
-    c.addEventListener('pointerleave', () => { hover = -1; if (!sel) render(false); });
-    c.addEventListener('pointerdown', e => { sel = [pos(e), pos(e)]; c.setPointerCapture(e.pointerId); });
-    c.addEventListener('pointerup', e => {
-      if (!sel) return; const a = Math.min(sel[0], pos(e)), b = Math.max(sel[0], pos(e)); sel = null;
-      if (b - a > 8) { const t0 = G1.inv(a), t1 = G1.inv(b); win = [Math.max(T[0], t0), Math.min(T[N - 1], t1)]; setPressed(null); }
-      draw();
-    });
-    c.addEventListener('dblclick', () => { win = base.slice(); draw(); });
   }
   function exportCsv() {
-    const i0 = lb(win[0]), i1 = lb(win[1] + 1), ms = active(); let csv = '﻿Data_hora_UTC-3;Observado_m_acima_NR;' + ms.map(m => `Previsto_${m.k}_m;Erro_${m.k}_cm`).join(';') + '\r\n';
-    for (let i = i0; i < i1; i++) { const row = [fdt(T[i]), A.fmt((V[i] - NR) / 100, 3)]; for (const m of ms) { const p = pred(m.k)[i]; row.push(Number.isFinite(p) ? A.fmt((p - NR) / 100, 3) : '', Number.isFinite(p) ? A.fmt(p - V[i], 1) : ''); } csv += row.join(';') + '\r\n'; }
-    A.download(csv, 'text/csv;charset=utf-8', `TideConversor_Previsto_x_Observado_${iso(win[0])}_${iso(win[1] - 1)}.csv`);
+    const i0 = lb(start), i1 = lb(start + len * DAY), p = pred(); let csv = '﻿Data_hora_UTC-3;Observado_m_acima_NR;Previsto_m_acima_NR;Erro_cm (previsto - observado)\r\n';
+    for (let i = i0; i < i1; i++) csv += [`${iso(T[i])} ${hm(T[i])}`, A.fmt(m_(V[i]), 3), A.fmt(m_(p[i]), 3), A.fmt(p[i] - V[i], 1)].join(';') + '\r\n';
+    A.download(csv, 'text/csv;charset=utf-8', `Previsto_x_Observado_${iso(start)}_${len}dias.csv`);
   }
   window.TCCompare = { show };
   if (!$('compare').hidden) show();
