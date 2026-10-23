@@ -10,7 +10,7 @@
   $('cartaNiveis').innerHTML = niveis.map(([n, s, v]) => `<tr><td>${n}</td><td>${s}</td><td>${m(v)}</td><td>${m(v + NR)}</td></tr>`).join('') +
     `<tr class="ref"><td>Nível de redução</td><td>NR</td><td>0,00</td><td>${f(NR / 100, 3)}</td></tr>`;
   const hw = q.HWFC_h, hh = Math.floor(hw), mm = Math.round((hw - hh) * 60);
-  const gerais = [['Tipo de maré', `Semidiurna (F = ${f(q.F, 2)})`], ['Estabelecimento do porto (HWF&C)', `${hh} h ${String(mm).padStart(2, '0')} min`],
+  const gerais = [['Tipo de maré (critério de Courtier)', `Semidiurna: C = (K1 + O1)/(M2 + S2) = ${f(q.F, 2)}, dentro de 0 ≤ C ≤ 0,25`], ['Estabelecimento do porto (HWF&C)', `${hh} h ${String(mm).padStart(2, '0')} min`],
     ['Amplitude média de sizígia', `${m(q.MHWS - q.MLWS)} m`], ['Amplitude média de quadratura', `${m(q.MHWN - q.MLWN)} m`],
     ['Nível médio acima do zero da régua', `${m(q.S0)} m`], ['NR acima do zero da régua', `${f(NR / 100, 3)} m (RLS − ${f(NR / 100, 3)} m)`]];
   $('cartaGerais').innerHTML = gerais.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
@@ -26,11 +26,15 @@
   const p95 = a => { const v = a.slice().sort((x, y) => x - y); return v[Math.min(v.length - 1, Math.ceil(.95 * v.length) - 1)]; };
   const EP = Date.UTC(2024, 0, 1), ev = T.ev.map(e => ({ t: EP + (e[0] + 180) * 6e4, h: Math.abs(e[3] - e[2]) / 10, dt: Math.abs(e[4]) })), teste = ev.filter(e => e.t < t0 || e.t > t1);
   const dd = x => `${x.slice(8, 10)}/${x.slice(5, 7)}/${x.slice(0, 4)}`;
-  const qual = [['Nível de redução (datum)', 'NR = S0 − (M2 + S2 + N2 + K2), método do Alte Franco; referido ao zero da régua de Fazendinha'],
-    ['Nível médio (S0)', `${m(q.S0)} m acima do zero da régua (média anual, com Sa e Ssa)`],
-    ['Observação', `${dias} dias de régua (${dd(b2[0])} a ${dd(b2[1])}); mínimo recomendado pela S-44: 30 dias`],
-    ['Ligação com datum terrestre', 'não determinada (sem referência de nível nem ligação geodésica da régua)'],
-    ['Origem das alturas', 'constantes harmônicas (previsão); a observação direta é preferível quando disponível'],
+  const qual = [['Nível de redução (NR)', 'NR = S0 − Zo, com Zo = H(M2) + H(S2) + H(N2) + H(K2) (maré semidiurna, NORMAM-501, Anexo J, Ap. I); referido ao zero da régua de Fazendinha'],
+    ['Zo (NR abaixo do nível médio)', `${m(q.Zo)} m = ${m(por.M2.H)} + ${m(por.S2.H)} + ${m(por.N2.H)} + ${m(por.K2.H)}`],
+    ['Nível médio (S0)', `${m(q.S0)} m acima do zero da régua (média anual, com Sa e Ssa); período padrão de nível médio não definido`],
+    ['Observação e método', `${dias} dias de régua (${dd(b2[0])} a ${dd(b2[1])}), análise harmônica pelo PACMARÉ; mínimo: 32 dias (NORMAM-501) e 30 dias (S-44)`],
+    ['Hora', 'UTC−3 (fuso PAPA), sem horário de verão; amostragem constante em minutos cheios'],
+    ['Ficha da estação (F-41)', 'pendente: faltam 3 a 5 referências de nível (RN), nivelamento entre régua e RN e comprimento da régua'],
+    ['Ratificação do NR', 'NR de trabalho do Setor de Hidrografia da UNIPILOT; não foi ratificado pelo CHM/DHN'],
+    ['Ligação com datum terrestre', 'não determinada (sem RN nem ligação geodésica da régua)'],
+    ['Origem das alturas', 'constantes harmônicas (previsão). Para reduzir sondagens a NORMAM-501 aceita só maré observada durante o levantamento, não a prevista'],
     ['Incerteza da altura (95 %)', `± ${f(p95(teste.map(e => e.h)) / 100, 2)} m nas preamares e baixamares, em dados fora do ajuste (${teste.length} marés)`],
     ['Incerteza do horário (95 %)', `± ${Math.round(p95(teste.map(e => e.dt)))} min nas preamares e baixamares, em dados fora do ajuste`],
     ['Variação do nível médio', 'o rio desloca o nível médio ao longo do ano; Sa (21,6 cm) e Ssa (8,3 cm) já estão incluídas, mas anos secos ou cheios diferem']];
