@@ -16,13 +16,14 @@
   <div class="top">
     <div class="brand">
       <img class="institution-logo" src="logo.png" alt="Logotipo UNIPILOT" width="34" height="37">
-      <div><strong>TideConversor <em>v2</em></strong><span>Fazendinha &amp; Santana</span></div>
+      <div><strong>TideConversor <em>v2.1</em></strong><span>Fazendinha &amp; Santana</span></div>
     </div>
     <nav class="topnav" role="tablist" aria-label="Ferramentas">
       <button role="tab" id="tab-converter" data-panel="converter" aria-selected="true" aria-controls="converter">Alturas</button>
       <button role="tab" id="tab-lunar" data-panel="lunar" aria-selected="false" aria-controls="lunar">Horários</button>
       <button role="tab" id="tab-history" data-panel="history" aria-selected="false" aria-controls="history">Histórico</button>
       <button role="tab" id="tab-forecast" data-panel="forecast" aria-selected="false" aria-controls="forecast">Previsão</button>
+      <button role="tab" id="tab-compare" data-panel="compare" aria-selected="false" aria-controls="compare">Previsto × observado</button>
     </nav>
   </div>
 </header>
@@ -81,7 +82,7 @@
       </div>
       <p class="calculation" id="calculation" aria-live="polite"></p>
       <div class="warning" id="warning" role="status" hidden></div>
-      <p class="note" id="basis">NR = leitura da régua − 0,75 m. A equivalência usa o ajuste do mês selecionado.</p>
+      <p class="note" id="basis">NR = leitura da régua − 0,667 m. A equivalência usa o ajuste do mês selecionado.</p>
     </div>
 
     <div class="card">
@@ -99,7 +100,7 @@
     <div class="calibration" id="model"></div>
     <div class="tablewrap"><table id="modelTable"><caption>Ajustes mensais de referência · T = a + b·R · [IC 95% de b por reamostragem de semanas]</caption>
       <thead><tr><th>Mês</th><th>a (m)</th><th>b</th><th>Pares</th><th>Erro T (cm)</th><th>Erro R (cm)</th><th>Faixa R (m)</th></tr></thead><tbody></tbody></table></div>
-    <p>R = régua acima do zero; H = nível de Fazendinha acima do NR; T = tábua de Santana. H = R − 0,75; T = a + bR; no sentido inverso R = (T − a)/b (regredir R sobre T diretamente dá o mesmo erro, 7,7 cm). A redução de 0,75 m foi informada pelo usuário e pressupõe o mesmo zero entre a régua física e o RLS, sem nivelamento independente.</p>
+    <p>R = régua acima do zero; H = nível de Fazendinha acima do NR; T = tábua de Santana. H = R − 0,667; T = a + bR; no sentido inverso R = (T − a)/b (regredir R sobre T diretamente dá o mesmo erro, 7,7 cm). A redução de 0,667 m foi informada pelo usuário e pressupõe o mesmo zero entre a régua física e o RLS, sem nivelamento independente.</p>
     <p>O ajuste em cada data usa os pares PM/BM com peso gaussiano (σ = 15 dias). Em validação por semanas excluídas o erro típico é de 7,8 cm, igual ao dos ajustes mensais (8,1 cm) e dos harmônicos (7,9 cm), mas sem saltos na virada do mês. O erro é validação temporal interna em 2026, não intervalo de confiança. Alturas intermediárias não foram validadas separadamente; o conversor não prevê horários nem aplica defasagem temporal às alturas.</p>
   </details>
 </section>
@@ -230,6 +231,8 @@
       <div class="inputbox"><button class="step" id="dayPrev" type="button" aria-label="Dia anterior">‹</button><input type="date" id="forecastDate" min="2026-01-01" max="2026-12-31"><button class="step" id="dayNext" type="button" aria-label="Próximo dia">›</button></div></div>
     <div><label class="label" for="forecastTime">3 · Hora (Brasília)</label>
       <div class="inputbox"><input type="time" id="forecastTime"><button class="step wide" id="nowBtn" type="button">Agora</button></div></div>
+    <div class="wide"><label class="label" for="forecastMethod">4 · Método</label>
+      <select id="forecastMethod"><option value="harmA">Harmônica de Fazendinha + componentes anuais (recomendado)</option><option value="harm">Harmônica de Fazendinha, só marés</option><option value="tabua">Tábua de Santana convertida pela calibração</option></select></div>
   </div>
 
   <div class="warning" id="forecastWarning" role="status" hidden></div>
@@ -243,10 +246,18 @@
     </div>
     <p class="fc-column" id="fcColumn" hidden></p>
   </div>
+  <p class="note" id="fcNote"></p>
 
   <div class="card">
     <h3>Marés do dia</h3>
     <div class="tidelist" id="tideList"></div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>Quadro de marés de Fazendinha</h3>
+    <p class="sub">Níveis médios calculados com as constantes harmônicas do bloco 02 (313 dias) e NR de 66,7 cm.</p>
+    <div class="tablewrap"><table><thead><tr><th>Nível</th><th>acima do NR (m)</th><th>acima do zero da régua (m)</th></tr></thead><tbody id="quadroBody"></tbody></table></div>
+    <p class="note" id="quadroNote"></p>
   </div>
 
   <div class="card" style="margin-top:20px">
@@ -266,9 +277,48 @@
   </details>
 
   <details class="method"><summary>Como a previsão é calculada</summary>
-    <p>A tábua de Santana dá apenas a hora e a altura de cada preamar e baixamar (1.411 no ano). Entre dois extremos seguidos, o app desenha uma curva suave em forma de cosseno, que passa exatamente pelos dois extremos. Não é a previsão harmônica oficial e não se estende além do que a tábua cobre.</p>
-    <p>Para Fazendinha, cada altura de Santana é convertida em leitura da régua com a calibração da data e depois reduzida em 0,75 m para dar o nível acima do NR. Os horários continuam sendo os de Santana, a menos que você ative o ajuste de defasagem.</p>
-    <p>Esses níveis intermediários e os horários locais não têm validação independente. O erro típico da conversão nos extremos é de cerca de 8 cm. Depois do último par observado (23/10/2026) a calibração é repetida e o app avisa.</p>
+    <p><b>Harmônica de Fazendinha (padrão).</b> O nível é a soma de ondas senoidais: nível = S0 + Σ f·H·cos(V0 + u − G), com as 57 constantes harmônicas obtidas da série de 313 dias do bloco 02 (análise por espécie, correções f e u, inferência e rejeição a 95 %, como no ANHAMA do PACMARÉ). Os argumentos astronômicos são os de Schureman. A previsão vale para qualquer data de 2024 a 2030, mas as componentes mais lentas dependem do regime do rio observado em 2025–2026.</p>
+    <p><b>Componentes anuais.</b> Sa (20,2 cm) e Ssa (8,6 cm) foram ajustadas ao resíduo dos blocos 02 e 04 (441 dias) e deslocam o nível médio ao longo do ano, porque o rio sobe e desce. Em dados que não entraram no ajuste, elas reduzem o erro de 17,7 para 12,1 cm (bloco 03) e de 52 para 26 cm (seca de 2024). Valem enquanto o regime do rio se parecer com 2025–2026.</p>
+    <p><b>Nível de redução.</b> NR = S0 − (M2 + S2 + N2 + K2) = 229,7 − 163,0 = 66,7 cm acima do zero da régua (método do Alte Franco, 1997). O nível mostrado é o nível acima do NR.</p>
+    <p><b>Tábua de Santana convertida.</b> Usa os 1.411 extremos da tábua de 2026 com interpolação cossenoidal e a calibração local da data; é útil como referência, mas só vale para 2026 e erra mais.</p>
+  </details>
+</section>
+
+<!-- ============ PREVISTO × OBSERVADO ============ -->
+<section id="compare" class="panel" role="tabpanel" aria-labelledby="tab-compare" hidden>
+  <div class="sectionhead">
+    <div><h2>Previsto × observado</h2><p class="sub">Compare a previsão com o que a régua registrou e veja o erro</p></div>
+    <div class="section-actions"><button class="textbutton" id="cmpCsv">Exportar CSV</button><button class="textbutton" data-method="compare">Como o erro é calculado</button></div>
+  </div>
+  <p class="intro">A linha preta é o nível <b>observado</b> na régua de Fazendinha (valores horários). As linhas coloridas são as <b>previsões</b>. O gráfico de baixo mostra o <b>erro</b> (previsto − observado): acima de zero, a previsão ficou mais alta que a água. Escolha um período, <b>arraste sobre o gráfico</b> para ampliar e veja a tabela de erros do trecho visível.</p>
+
+  <div class="card cmp-controls">
+    <div><span class="label">Período</span><div class="chips" id="cmpPresets"></div></div>
+    <div class="cmp-row">
+      <div><label class="label" for="cmpFrom">De</label><input type="date" id="cmpFrom"></div>
+      <div><label class="label" for="cmpTo">Até</label><input type="date" id="cmpTo"></div>
+      <div><label class="label" for="cmpRef">Referência da altura</label><select id="cmpRef"><option value="nr">Acima do NR (66,7 cm)</option><option value="zero">Acima do zero da régua</option></select></div>
+    </div>
+    <div class="cmp-models" id="cmpModels"></div>
+  </div>
+
+  <div class="card">
+    <div class="legend" id="cmpLegend"></div>
+    <canvas id="cmpMain" height="340" aria-label="Nível observado e previsto"></canvas>
+    <canvas id="cmpErr" height="150" aria-label="Erro da previsão"></canvas>
+    <p class="readout" id="cmpReadout" aria-live="polite">Passe o cursor sobre o gráfico para ver os valores. Arraste para ampliar; duplo clique volta ao período escolhido.</p>
+  </div>
+
+  <div class="card"><h3>Erros no trecho visível</h3><p class="sub" id="cmpSub"></p><div class="tablewrap"><table id="cmpStats"></table></div></div>
+
+  <div class="cmp-grid">
+    <div class="card"><h3>Previsto × observado</h3><div class="row-sel"><label class="label" for="cmpScatterModel">Modelo</label><select id="cmpScatterModel"></select></div><canvas id="cmpScatter" height="320"></canvas><p class="note">Cada ponto é uma hora. Quanto mais perto da diagonal, melhor a previsão.</p></div>
+    <div class="card"><h3>Distribuição do erro</h3><canvas id="cmpHist" height="320"></canvas><p class="note">Número de horas por faixa de erro (cm). Uma boa previsão forma um pico estreito em zero.</p></div>
+  </div>
+
+  <details class="method"><summary>Como o erro é calculado</summary>
+    <p>As observações são médias de 5 min da régua reduzidas a valores horários (valor exato das HH:00, ou interpolação linear entre vizinhos com intervalo ≤ 60 min). Para cada hora, erro = previsto − observado, em cm. <b>Viés</b> é o erro médio; <b>RMSE</b> é a raiz do erro quadrático médio; <b>EAM</b> é o erro absoluto médio; <b>P95</b> é o erro absoluto que 95 % das horas não ultrapassam; <b>r</b> é a correlação.</p>
+    <p>Os períodos B01 a B04 são os blocos contínuos de 32 dias ou mais. A previsão harmônica foi ajustada em B02 (maré) e em B02 + B04 (componentes anuais): <b>B01 e B03 são dados independentes</b>, ou seja, não participaram do ajuste; no B02 e no B04 o erro é “dentro da amostra”. A tábua de Santana convertida só existe para 2026. Depois de 11/08/2026 o registrador grava de forma irregular, e as horas disponíveis são menos.</p>
   </details>
 </section>
 </main>
@@ -276,7 +326,7 @@
 <details class="gloss"><summary>Glossário: o que significam esses termos?</summary>
   <dl>
     <dt>Régua (R)</dt><dd>Leitura da régua física de Fazendinha, em metros acima do zero da própria régua.</dd>
-    <dt>NR</dt><dd>Nível de redução, a referência de profundidade. Aqui, NR = leitura da régua − 0,75 m.</dd>
+    <dt>NR</dt><dd>Nível de redução, a referência de profundidade. Aqui, NR = leitura da régua − 0,667 m.</dd>
     <dt>Tábua de Santana</dt><dd>Altura da maré prevista na tábua oficial do Porto de Santana.</dd>
     <dt>Preamar (PM) e baixamar (BM)</dt><dd>Momento de maré mais cheia e de maré mais seca.</dd>
     <dt>Sizígia e quadratura</dt><dd>Sizígia: lua nova e cheia, marés de maior amplitude. Quadratura: quartos de lua, marés de menor amplitude.</dd>
@@ -286,7 +336,7 @@
 </details>
 <footer>
   <p>Desenvolvido pelo Setor de Hidrografia da UNIPILOT · Dados de calibração de 2026 · Não substitui a Tábua de Marés oficial da DHN nem serve à navegação.</p>
-  <p><button class="textbutton" id="installOffline" hidden>Instalar</button> <a href="README.md">Documentação</a> · <a href="ANALISE.md">Reanálise dos dados</a></p>
+  <p><button class="textbutton" id="installOffline" hidden>Instalar</button> <a href="README.md">Documentação</a> · <a href="ANALISE_HARMONICA.md">Análise harmônica</a> · <a href="ANALISE.md">Reanálise dos dados</a></p>
 </footer>
 
 <dialog id="methodDialog" aria-labelledby="methodTitle">
@@ -296,6 +346,9 @@
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script src="data/data.js"></script>
+<script src="data/harm.js"></script>
+<script src="harmonic.js"></script>
 <script src="app.js"></script>
+<script src="compare.js"></script>
 </body>
 </html>
