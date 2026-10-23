@@ -22,7 +22,7 @@
   const por = Object.fromEntries(T.comps.map(c => [c.n, c])), ordem = ['M2', 'S2', 'N2', 'K2', 'K1', 'O1', 'P1', 'Q1', 'M4', 'MS4', 'MN4', 'Sa', 'Ssa'];
   $('cartaConst').innerHTML = ordem.filter(n => por[n]).map(n => {
     const c = por[n], v = c.c.reduce((s, x, i) => s + x * SP[i], 0);
-    return `<tr><td>${n}</td><td>${f(v, 4)}</td><td>${f(c.H / 100, 3)}</td><td>${f(mod(c.g - 3 * v), 1)}</td><td>${f(mod(c.g), 1)}</td></tr>`;
+    return `<tr><td>${n}</td><td>${f(v, 2)}</td><td>${f(c.H / 100, 3)}</td><td>${f(mod(c.g - 3 * v), 1)}</td><td>${f(mod(c.g), 1)}</td></tr>`;
   }).join('');
   const b = T.blocks[2];
   $('cartaFonte').textContent = `Fonte: análise harmônica do PACMARÉ (113 componentes) de 313 dias de registro da régua de Fazendinha, de ${b[0].slice(8, 10)}/${b[0].slice(5, 7)}/${b[0].slice(0, 4)} a ${b[1].slice(8, 10)}/${b[1].slice(5, 7)}/${b[1].slice(0, 4)}. Sa e Ssa são as componentes anuais (efeito do rio); H em metros, G em graus. NR = S0 − (M2 + S2 + N2 + K2), método do Alte Franco (1997).`;

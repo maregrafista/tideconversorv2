@@ -56,3 +56,37 @@
 #carta .carta-chart tr.faz td{font-weight:700;background:var(--sage,#eef)}#carta .carta-chart tr.oficial td{color:var(--muted)}
 
 :root{--c-pm:#D55E00;--c-bm:#0072B2}
+/* Previsão */
+#forecast .fc-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+#forecast .fc-bar select,#forecast .fc-bar input{border:1.5px solid var(--line);background:var(--paper);padding:9px 10px;font:inherit;color:inherit;min-width:0;height:42px}
+#forecast .fc-date{display:flex;gap:6px;align-items:center}
+#forecast .fc-date .step{border:0;background:var(--sage);width:40px;height:42px;font-size:20px;color:inherit}
+#forecast .fc-read{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-bottom:10px;border-bottom:1px solid var(--line)}
+#forecast .fc-read>div{padding:4px 14px 12px;border-left:1px solid var(--line)}#forecast .fc-read>div:first-child{border-left:0;padding-left:2px}
+#forecast .fc-read .k{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#forecast .fc-read .v{display:block;font:600 clamp(24px,3.4vw,32px) var(--serif,Georgia,serif);letter-spacing:-.02em}#forecast .fc-read .v small{font-size:.5em;color:var(--muted)}
+#forecast .fc-read .s{display:block;font-size:12.5px;color:var(--muted)}
+#forecast canvas{width:100%;display:block}
+#forecast .fc-day{list-style:none;margin:10px 0 0;padding:0;display:flex;gap:8px 18px;flex-wrap:wrap;font-size:13.5px;font-variant-numeric:tabular-nums}
+#forecast .fc-day li{white-space:nowrap}#forecast .fc-day .pm b{color:var(--c-pm,#D55E00)}#forecast .fc-day .bm b{color:var(--c-bm,#0072B2)}
+#forecast .fc-warn{background:var(--warn-bg,#fff4dc);color:var(--warn-ink,#6a4710);padding:8px 12px;margin:0 0 10px;font-size:13px}
+@media (max-width:600px){#forecast .fc-read{grid-template-columns:1fr 1fr}#forecast .fc-read>div:first-child{grid-column:1/-1;border-bottom:1px solid var(--line);margin-bottom:6px}#forecast .fc-read>div:nth-child(2){border-left:0;padding-left:2px}}
+/* Previsto × observado compacto */
+#compare .cmp-ctl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0 14px}
+#compare .cmp-ctl select,#compare .cmp-ctl input{border:1.5px solid var(--line);background:var(--paper);padding:8px 10px;font:inherit;color:inherit;height:40px;min-width:0}
+#compare .cmp-ctl .cmp-nav{margin:0;display:flex;gap:6px;align-items:center}
+#compare .cmp-ctl .step{height:40px;width:40px}
+#compare .cmp-ctl .chips{margin:0}
+#compare .cmp-tag{margin:0 0 0 auto;padding:5px 10px;font-size:12px;font-weight:600}
+#compare .cmp-grid{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:16px;align-items:start}
+#compare .cmp-grid .fig{margin:0}
+#compare .cmp-cards{display:grid;grid-template-columns:1fr 1fr;margin:0}
+#compare .cmp-cards .cmp-card:nth-child(odd){border-left:0;padding-left:4px}
+#compare .cmp-cards .cmp-card:nth-child(n+3){border-top:1px solid var(--line)}
+#compare .cmp-card .v{font-size:clamp(22px,2.2vw,28px)}
+#compare .cmp-empty{grid-column:1/-1;padding:12px 4px;color:var(--muted);font-size:13.5px}
+#compare .cmp-all{font-size:12.5px;color:var(--muted);margin:10px 0 14px;line-height:1.5}
+#compare .cmp-table{margin-top:16px}#compare .cmp-table summary{font:600 14px var(--serif,Georgia,serif)}
+#compare .cmp-legend{margin:6px 0 0;gap:6px 14px;font-size:12px}
+#compare canvas#cmpOv{margin-bottom:6px}
+@media (max-width:900px){#compare .cmp-grid{grid-template-columns:minmax(0,1fr)}#compare .cmp-tag{margin-left:0}}

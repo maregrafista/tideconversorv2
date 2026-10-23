@@ -1,0 +1,20 @@
+<section id="forecast" class="panel" role="tabpanel" aria-labelledby="tab-forecast" hidden>
+  <div class="sectionhead"><div><h2>Previsão da maré</h2><p class="sub">Altura acima do NR e horários de preamar e baixamar</p></div></div>
+  <div class="fc-bar">
+    <select id="fcLoc" aria-label="Local"><option value="faz">Fazendinha</option><option value="san">Porto de Santana (tábua)</option></select>
+    <div class="fc-date"><button class="step" id="fcPrev" type="button" aria-label="Dia anterior">‹</button><input type="date" id="fcDate" aria-label="Dia"><button class="step" id="fcNext" type="button" aria-label="Próximo dia">›</button></div>
+    <input type="time" id="fcTime" aria-label="Hora (Brasília)"><button class="chip" id="fcNow" type="button">Agora</button>
+  </div>
+  <p class="fc-warn" id="fcWarn" role="status" hidden></p>
+  <figure class="card fig fc-card">
+    <div class="fc-read" aria-live="polite">
+      <div><span class="k">Nível às <b id="fcAt">—</b></span><span class="v" id="fcLevel">—</span><span class="s" id="fcTrend"></span></div>
+      <div><span class="k">▲ Próxima preamar</span><span class="v" id="fcPM">—</span><span class="s" id="fcPMs"></span></div>
+      <div><span class="k">▼ Próxima baixamar</span><span class="v" id="fcBM">—</span><span class="s" id="fcBMs"></span></div>
+    </div>
+    <canvas id="fcChart" height="320" aria-label="Curva de maré do dia"></canvas>
+    <ul class="fc-day" id="fcDay" aria-label="Marés do dia"></ul>
+    <figcaption class="fig-cap">Toque ou arraste sobre a curva para escolher a hora. Círculos: preamares e baixamares do dia; linha tracejada: hora atual.</figcaption>
+  </figure>
+  <button class="textbutton" id="fcCsv" type="button">Baixar o dia (CSV, a cada 15 min)</button>
+</section>

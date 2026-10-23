@@ -71,3 +71,7 @@ figure{margin:0}
   td small,.calculation,.cmp-card .k,.result h3,.history-readout{font-size:11.5px!important}
   .calculation{font-size:12px!important}
 }
+
+/* Tabela 5 (constantes): tudo centralizado nas células */
+#carta .carta-const th,#carta .carta-const td,#carta .carta-const td:first-child,#carta .carta-const th:first-child,#carta .carta-const td:nth-child(2){text-align:center}
+@media (max-width:600px){#compare .cmp-dl{gap:14px}#compare .cmp-dl .textbutton{min-height:32px;padding:0;border:0;background:none;text-decoration:underline;font-size:13px!important}#compare .cmp-ctl{gap:8px;margin:10px 0}}

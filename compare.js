@@ -40,9 +40,9 @@
   }
 
   function build() {
-    $('cmpPresets').innerHTML = PRESETS.map(p => `<button class="chip" data-p="${p.id}" aria-pressed="false">${p.label}</button>`).join('');
+    $('cmpPresets').innerHTML = '<option value="">Exemplos…</option>' + PRESETS.map(p => `<option value="${p.id}">${p.label}</option>`).join('');
     $('cmpLen').innerHTML = LENS.map(d => `<button class="chip" data-d="${d}" aria-pressed="false">${d} dias</button>`).join('');
-    $('cmpPresets').onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; const p = PRESETS.find(x => x.id === b.dataset.p); len = 7; go(p.start ? parseLocal(p.start) : last - 6 * DAY, p.id); };
+    $('cmpPresets').onchange = e => { const p = PRESETS.find(x => x.id === e.target.value); if (!p) return; len = 7; go(p.start ? parseLocal(p.start) : last - 6 * DAY, p.id); };
     $('cmpLen').onclick = e => { const b = e.target.closest('[data-d]'); if (b) { len = +b.dataset.d; go(start, active); } };
     $('cmpPrev').onclick = () => go(start - len * DAY, null);
     $('cmpNext').onclick = () => go(start + len * DAY, null);
@@ -62,9 +62,8 @@
   function show() { if (!built) build(); else render(); }
 
   function summary() {
-    const all = stats(EV), test = stats(EV.filter(e => !inFit(e.t))), fit = stats(EV.filter(e => inFit(e.t)));
-    const c = (k, s, sub) => `<div class="cmp-card"><div class="k">${k}</div><div class="v">${s ? fmt(s.rmse, 1) : '—'} <small>cm</small></div><div class="s">${sub}${s ? ` · ${fmt(s.n)} marés · tendência ${sgn(s.bias, 1)} cm` : ''}</div></div>`;
-    $('cmpSummary').innerHTML = c('Todo o registro', all, 'erro típico de altura') + c('Só teste independente', test, 'dados não usados no ajuste') + c('Usado no ajuste', fit, 'bloco 02 (erro menor por construção)');
+    const all = stats(EV), test = stats(EV.filter(e => !inFit(e.t))), fit = stats(EV.filter(e => inFit(e.t))), f1 = s => s ? fmt(s.rmse, 1) : '—';
+    $('cmpSummary').innerHTML = `Todo o registro (${fmt(EV.length)} marés): <b>${f1(all)} cm</b> · teste independente: <b>${f1(test)} cm</b> · ajuste: <b>${f1(fit)} cm</b>`;
   }
 
   function render() {
@@ -72,24 +71,20 @@
     { const m = (getComputedStyle(document.body).backgroundColor.match(/\d+/g) || [255, 255, 255]).map(Number), dark = (m[0] + m[1] + m[2]) / 3 < 110;   // fundo escuro: tons mais claros da mesma paleta
       ORANGE = dark ? '#F28E4B' : '#D55E00'; BLUE = dark ? '#56B4E9' : '#0072B2'; $('compare').style.setProperty('--c-pm', ORANGE); $('compare').style.setProperty('--c-bm', BLUE); }
     $('cmpDate').value = iso(t0); $('cmpDate').min = iso(first); $('cmpDate').max = iso(last);
-    document.querySelectorAll('#cmpPresets [data-p]').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === active));
+    $('cmpPresets').value = active || '';
     document.querySelectorAll('#cmpLen [data-d]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.d === len));
     const nfit = ev.filter(e => inFit(e.t)).length, fit = ev.length && nfit / ev.length > .5, sparse = t0 >= SPARSE, drought = t0 >= B01[0] - DAY && t0 <= B01[1];
     const tag = $('cmpTag'); tag.className = 'cmp-tag ' + (sparse ? 'sparse' : fit ? 'fit' : 'test');
-    tag.textContent = (fit ? 'Período usado no ajuste da previsão: o erro aqui é menor do que seria em dados novos.' : 'Período de teste: estes dados não foram usados para ajustar a previsão. É o teste mais honesto.') +
-      (drought ? ' Em 2024 houve seca extrema: o rio estava bem abaixo do normal.' : '') + (sparse ? ' Depois de 11/08/2026 a régua grava de forma irregular, com menos horas.' : '');
-    if (!s) { $('cmpCards').innerHTML = ''; $('cmpVerdict').textContent = (t0 > Date.parse('2026-07-31T12:00:00-03:00') ? 'Depois de 31/07/2026 o registrador grava de forma irregular e as preamares e baixamares observadas não puderam ser medidas com precisão; as curvas acima continuam disponíveis. Escolha outro período para ver o erro.' : 'Sem preamares e baixamares observadas neste período. Escolha outro.'); }
+    tag.textContent = sparse ? 'Registro irregular' : fit ? 'Usado no ajuste' : drought ? 'Teste · seca de 2024' : 'Teste independente';
+    if (!s) { $('cmpCards').innerHTML = `<div class="cmp-empty">${t0 > Date.parse('2026-07-31T12:00:00-03:00') ? 'Depois de 31/07/2026 o registro é irregular e não há preamares e baixamares medidas.' : 'Sem preamares e baixamares neste período.'}</div>`; }
     else {
       const evT = ev.reduce((a, e) => a + Math.abs(e.dt), 0) / ev.length;
-      const bTxt = Math.abs(s.bias) < 1 ? 'sem tendência de ficar acima ou abaixo da água' : `a previsão ficou, em média, ${fmt(Math.abs(s.bias))} cm ${s.bias > 0 ? 'acima' : 'abaixo'} da água`;
       $('cmpCards').innerHTML = [
-        ['Erro típico', `${fmt(s.rmse)} <small>cm</small>`, 'diferença típica de altura entre as preamares e baixamares previstas e observadas'],
-        ['Tendência', `${sgn(s.bias)} <small>cm</small>`, bTxt],
-        ['9 em cada 10 marés', `&lt; ${fmt(s.p90)} <small>cm</small>`, 'o erro de altura foi menor que isso em 90 % das preamares e baixamares'],
-        ['Horário da maré', `${fmt(evT)} <small>min</small>`, `diferença média entre a hora prevista e a observada (${ev.length} marés)`]
+        ['Erro típico', `${fmt(s.rmse)} <small>cm</small>`, rating(s.rmse)],
+        ['Tendência', `${sgn(s.bias)} <small>cm</small>`, Math.abs(s.bias) < 1 ? 'neutra' : s.bias > 0 ? 'previsto acima' : 'previsto abaixo'],
+        ['90 % das marés', `&lt; ${fmt(s.p90)} <small>cm</small>`, `${ev.length} marés`],
+        ['Horário', `${fmt(evT)} <small>min</small>`, 'erro médio']
       ].map(c => `<div class="cmp-card"><div class="k">${c[0]}</div><div class="v">${c[1]}</div><div class="s">${c[2]}</div></div>`).join('');
-      const why = Math.abs(s.bias) >= 10 ? ` O nível médio da água estava diferente do usual (rio ${s.bias > 0 ? 'mais baixo' : 'mais alto'} que o esperado), e isso explica boa parte do erro.` : '';
-      $('cmpVerdict').innerHTML = `Nestes ${len} dias (${fmt(s.n)} preamares e baixamares) a previsão foi <b>${rating(s.rmse)}</b>: errou em média ${fmt(s.rmse)} cm na altura.${why}`;
     }
     summary(); sizeCanvases(); drawOverview(t0, t1); drawMain(i0, i1, t0, t1, ev); drawErr(t0, t1, ev); table(ev); drawMonths();
     $('cmpCursor').hidden = true; $('cmpTip').hidden = true;
@@ -97,7 +92,7 @@
 
   /* ---------- utilidades de desenho ---------- */
   const tall = () => (innerHeight >= 760 ? 1 : innerHeight >= 640 ? .85 : .7);
-  function sizeCanvases() { const k = tall(); $('cmpOv').setAttribute('height', Math.round(150 * Math.max(k, .8))); $('cmpMain').setAttribute('height', Math.round(300 * k)); $('cmpErr').setAttribute('height', Math.round(140 * k)); $('cmpMonths').setAttribute('height', Math.round(190 * Math.max(k, .8))); }
+  function sizeCanvases() { const k = tall(); $('cmpOv').setAttribute('height', 96); $('cmpMain').setAttribute('height', Math.round(250 * k)); $('cmpErr').setAttribute('height', Math.round(110 * k)); $('cmpMonths').setAttribute('height', Math.round(150 * Math.max(k, .85))); }
   function setup(c) { const r = devicePixelRatio || 1, w = c.clientWidth, h = +c.getAttribute('height'); c.width = Math.round(w * r); c.height = Math.round(h * r); const x = c.getContext('2d'); x.setTransform(r, 0, 0, r, 0, 0); return { x, w, h }; }
   const col = n => A.css(n), INK = () => A.css('--ink') || '#1c1c1c';
   /** curva suave por uma lista de pontos [x,y] (pontos médios, sem sobressair) */
@@ -139,7 +134,7 @@
     for (let t = first; t < tb; t += DAY) { const dd = loc(t); if (dd.getUTCDate() === 1) { const mo = dd.getUTCFullYear() * 12 + dd.getUTCMonth(); x.strokeStyle = grid; x.beginPath(); x.moveTo(X(t), Tp); x.lineTo(X(t), Tp + ph); x.stroke(); if (mo !== lm && dd.getUTCMonth() % (pw > 760 ? 2 : pw > 440 ? 3 : 6) === 0) x.fillText(MN[dd.getUTCMonth()] + '/' + String(dd.getUTCFullYear()).slice(2), X(t), h - 5); lm = mo; } }
     x.fillStyle = txt; x.textAlign = 'left'; x.font = FONT; x.fillText('ajuste (bloco 02)', X(FIT[0][0]) + 4, Tp + 13);
     const line = (key, c, wd) => { x.strokeStyle = c; x.lineWidth = wd; x.beginPath(); let pt = null; for (const a of d) { if (pt !== null && a.t - pt <= 2 * DAY) x.lineTo(X(a.t + DAY / 2), Y(a[key])); else x.moveTo(X(a.t + DAY / 2), Y(a[key])); pt = a.t; } x.stroke(); };
-    line('p', GREEN, 1.9); line('o', INK(), 1.3); frame(x, L, Tp, pw, ph, 'Nível médio diário (m)', null);
+    line('p', GREEN, 1.9); line('o', INK(), 1.3); frame(x, L, Tp, pw, ph, 'Média (m)', null);
     x.fillStyle = 'rgba(165,108,52,.16)'; x.strokeStyle = '#a56c34'; x.lineWidth = 1.5; const wx = X(t0), ww = Math.max(3, X(t1) - X(t0)); x.fillRect(wx, Tp, ww, ph); x.strokeRect(wx, Tp, ww, ph);
   }
 
@@ -206,7 +201,7 @@
   function table(ev) {
     const el = $('cmpEvents'), list = showAll ? EV : ev;
     $('cmpAll').textContent = showAll ? 'Ver só este período' : `Ver todas as ${fmt(EV.length)} marés do registro`;
-    $('cmpEvTitle').textContent = showAll ? `Todas as preamares e baixamares do registro (${fmt(EV.length)})` : 'Preamares e baixamares neste período';
+    $('cmpEvTitle').textContent = showAll ? `Todas as preamares e baixamares (${fmt(EV.length)})` : `Preamares e baixamares do período (${fmt(ev.length)})`;
     if (!list.length) { el.innerHTML = '<tbody><tr><td>Sem preamares e baixamares completas neste período.</td></tr></tbody>'; return; }
     const day = e => `${WD[loc(e.t).getUTCDay()]} ${dm(e.t)}${showAll ? '/' + String(loc(e.t).getUTCFullYear()).slice(2) : ''} ${hm(e.t)}`;
     el.innerHTML = '<thead><tr><th>Maré</th><th>Quando (observado)</th><th>Hora prevista</th><th>Altura observada</th><th>Altura prevista</th><th>Erro de altura</th></tr></thead><tbody>' +
@@ -230,8 +225,9 @@
     list.forEach((a, i) => {
       const c = a.kind === 'test' ? GREEN : a.kind === 'fit' ? GRAY : AMBER, sel = a.y === cur.getUTCFullYear() && a.m === cur.getUTCMonth();
       dot(x, pts[i][0], pts[i][1], sel ? 6 : 4.6, c, sel ? INK() : null);
-      x.fillStyle = txt; x.font = FONT; x.textAlign = 'center'; x.fillText(fmt(a.rmse), pts[i][0], pts[i][1] - 9);
-      x.fillText(MN[a.m] + (a.m === 0 || i === 0 ? '/' + String(a.y).slice(2) : ''), pts[i][0], h - 6);
+      x.fillStyle = txt; x.font = FONT; x.textAlign = 'center'; const every = Math.max(1, Math.ceil(46 / bw));
+      if (bw >= 30 || sel) x.fillText(fmt(a.rmse), pts[i][0], pts[i][1] - 9);
+      if (i % every === 0) x.fillText(MN[a.m] + '/' + String(a.y).slice(2), Math.max(24, Math.min(w - 24, pts[i][0])), h - 6);
     });
   }
   function exportCsv(all) {

@@ -1,53 +1,36 @@
 <section id="compare" class="panel" role="tabpanel" aria-labelledby="tab-compare" hidden>
-  <div class="sectionhead">
-    <div><h2>Previsto × observado</h2><p class="sub">A previsão acertou? Compare com o que a régua de Fazendinha registrou.</p></div>
-    <div class="cmp-dl"><button class="textbutton" id="cmpCsv">Baixar este período (CSV)</button><button class="textbutton" id="cmpCsvAll">Baixar todas as marés (CSV)</button></div>
+  <div class="sectionhead"><div><h2>Previsto × observado</h2><p class="sub">Erro de altura nas preamares e baixamares de Fazendinha</p></div>
+    <div class="cmp-dl"><button class="textbutton" id="cmpCsv">CSV do período</button><button class="textbutton" id="cmpCsvAll">CSV de tudo</button></div></div>
+
+  <div class="cmp-ctl">
+    <select id="cmpPresets" aria-label="Período de exemplo"></select>
+    <div class="cmp-nav"><button class="step" id="cmpPrev" type="button" aria-label="Período anterior">‹</button><input type="date" id="cmpDate" aria-label="Primeiro dia"><button class="step" id="cmpNext" type="button" aria-label="Próximo período">›</button></div>
+    <div class="chips" id="cmpLen" role="group" aria-label="Duração"></div>
+    <span class="cmp-tag" id="cmpTag"></span>
   </div>
 
-  <p class="intro">Em cima, <b>todo o registro</b> da régua (média de cada dia). Embaixo, o <b>período escolhido</b> em detalhe: a <b>curva preta</b> é o nível que a régua registrou e a <b>curva verde</b>, o que a previsão dizia. Os <b>pontos</b> marcam as preamares e baixamares: preto = observado, verde vazado = previsto. O erro é medido só nesses pontos.</p>
+  <div class="cmp-grid">
+    <figure class="card fig cmp-left">
+      <canvas id="cmpOv" height="96" aria-label="Nível médio diário observado e previsto em todo o registro"></canvas>
+      <div class="cmp-chart" id="cmpWrap">
+        <canvas id="cmpMain" height="260" aria-label="Nível observado e previsto"></canvas>
+        <canvas id="cmpErr" height="110" aria-label="Erro de altura nas preamares e baixamares"></canvas>
+        <div class="cmp-cursor" id="cmpCursor" hidden></div><div class="cmp-tip" id="cmpTip" hidden></div>
+      </div>
+      <div class="cmp-legend"><span><i style="background:var(--ink,#1c1c1c)"></i>Observado</span><span><i style="background:#009E73"></i>Previsto</span><span><i class="dot" style="background:var(--ink,#1c1c1c)"></i>PM/BM observada</span><span><i class="dot ring"></i>PM/BM prevista</span><span><i class="dot" style="background:var(--c-pm,#D55E00)"></i>erro preamar</span><span><i class="tri" style="color:var(--c-bm,#0072B2)"></i>erro baixamar</span></div>
+      <figcaption class="fig-cap">Em cima, todo o registro (média diária; toque para mover a faixa marrom; cinza = ajuste). (a) Período escolhido. (b) Erro de altura nas preamares e baixamares (acima de zero = previsto acima).</figcaption>
+    </figure>
 
-  <figure class="card fig"><canvas id="cmpOv" height="150" aria-label="Nível médio diário observado e previsto em todo o registro"></canvas>
-    <div class="cmp-legend"><span><i style="background:var(--ink,#1c1c1c)"></i>Observado</span><span><i style="background:#009E73"></i>Previsto</span></div>
-    <figcaption class="fig-cap"><b>Figura 1.</b> Nível médio diário observado e previsto em todo o registro de Fazendinha (nov/2024 a out/2026), em metros acima do NR. A faixa marrom marca o período detalhado abaixo (toque no gráfico para mudá-la); a área cinza é o período usado no ajuste da previsão (bloco 02).</figcaption></figure>
-  <div class="cmp-tabhead"><b>Tabela 1.</b> Erro de altura nas preamares e baixamares (previsto − observado).</div>
-  <div class="cmp-cards cmp-cards3" id="cmpSummary"></div>
-
-  <div class="card cmp-pick">
-    <span class="label">1 · Escolha o que quer ver</span>
-    <div class="chips" id="cmpPresets"></div>
-    <span class="label" style="margin-top:14px">2 · Ou navegue pelo tempo</span>
-    <div class="cmp-nav">
-      <button class="step" id="cmpPrev" type="button" aria-label="Período anterior">‹</button>
-      <input type="date" id="cmpDate" aria-label="Primeiro dia">
-      <button class="step" id="cmpNext" type="button" aria-label="Próximo período">›</button>
-      <div class="chips" id="cmpLen" role="group" aria-label="Duração"></div>
+    <div class="cmp-right">
+      <div class="cmp-cards" id="cmpCards" aria-live="polite"></div>
+      <p class="cmp-all" id="cmpSummary"></p>
+      <figure class="card fig"><canvas id="cmpMonths" height="150" aria-label="Erro típico por mês"></canvas>
+        <div class="cmp-legend"><span><i style="background:#009E73"></i>teste</span><span><i style="background:#8a9590"></i>ajuste</span><span><i style="background:#E69F00"></i>registro irregular</span></div>
+        <figcaption class="fig-cap">Erro típico por mês (cm). Toque em um ponto para abrir o mês.</figcaption></figure>
     </div>
-    <p class="cmp-tag" id="cmpTag"></p>
   </div>
 
-  <p class="cmp-verdict" id="cmpVerdict" aria-live="polite"></p>
-
-  <figure class="card fig">
-    <div class="cmp-legend"><span><i style="background:var(--ink,#1c1c1c)"></i>Observado (curva)</span><span><i style="background:#009E73"></i>Previsto (curva)</span><span><i class="dot" style="background:var(--ink,#1c1c1c)"></i>PM/BM observada</span><span><i class="dot ring"></i>PM/BM prevista</span><span><i class="dot" style="background:var(--c-pm,#D55E00)"></i>erro nas preamares</span><span><i class="tri" style="color:var(--c-bm,#0072B2)"></i>erro nas baixamares</span><span><i class="gap"></i>sem registro</span></div>
-    <div class="cmp-chart" id="cmpWrap">
-      <canvas id="cmpMain" height="300" aria-label="Nível observado e previsto"></canvas>
-      <canvas id="cmpErr" height="130" aria-label="Diferença de altura nas preamares e baixamares"></canvas>
-      <div class="cmp-cursor" id="cmpCursor" hidden></div><div class="cmp-tip" id="cmpTip" hidden></div>
-    </div>
-    <figcaption class="fig-cap"><b>Figura 2.</b> Período escolhido. (a) Nível observado (curva preta) e previsto (curva verde), em metros acima do NR; os pontos marcam as preamares e baixamares, e o traço cinza liga cada observação à sua previsão. (b) Erro de altura nas preamares (círculos) e baixamares (triângulos): acima de zero, a previsão ficou mais alta que a água. Escalas fixas, iguais em todos os períodos; faixas cinza = sem registro.</figcaption>
-  </figure>
-
-  <div class="cmp-tabhead"><b>Tabela 2.</b> Resumo do período escolhido.</div>
-  <div class="cmp-cards" id="cmpCards" aria-live="polite"></div>
-  <div class="card"><div class="cmp-evhead"><div class="cmp-tabhead" style="margin:0"><b>Tabela 3.</b> <span id="cmpEvTitle">Preamares e baixamares neste período</span>: hora e altura em que a água chegou ao máximo e ao mínimo, contra o que a previsão dizia.</div><button class="chip" id="cmpAll" type="button">Ver todas as marés do registro</button></div><div class="tablewrap"><table id="cmpEvents"></table></div></div>
-
-  <figure class="card fig"><canvas id="cmpMonths" height="190" aria-label="Erro típico por mês"></canvas>
-    <div class="cmp-legend"><span><i style="background:#009E73"></i>teste independente (dados não usados no ajuste)</span><span><i style="background:#8a9590"></i>dados usados no ajuste (erro menor, não é um teste)</span><span><i style="background:#E69F00"></i>registro irregular (após 11/08/2026)</span></div>
-    <figcaption class="fig-cap"><b>Figura 3.</b> Erro típico (RMSE) de altura nas preamares e baixamares, mês a mês. Toque em um ponto para ver aquele mês em detalhe.</figcaption></figure>
-
-  <details><summary>Como ler estes números</summary>
-    <p><b>Erro típico (RMSE)</b>: diferença de altura entre as preamares e baixamares previstas e observadas, em centímetros (só elas são usadas; as horas intermediárias não entram no cálculo); erros grandes pesam mais. <b>Viés</b>: se a previsão ficou, em média, acima (+) ou abaixo (−) da água. <b>9 em cada 10 marés</b>: o erro máximo em 90 % das preamares e baixamares. <b>Horário</b>: diferença média entre a hora prevista e a observada para preamares e baixamares.</p>
-    <p><b>Avaliação:</b> até 10 cm, muito boa; até 15 cm, boa; até 25 cm, razoável; acima disso, fraca (a água do rio muda o nível médio e a previsão não acompanha).</p>
-    <p>A previsão é a harmônica de Fazendinha com as componentes anuais. As 113 constantes (marés e componentes anuais Sa e Ssa) vêm da análise do PACMARÉ do bloco B02 (fev/2025 a jan/2026). <b>Dados fora desse período são teste</b>: nov–dez/2024 e jan–jul/2026. Nos períodos usados no ajuste o erro é menor por construção. As observações são valores horários da régua; depois de 11/08/2026 o registrador grava de forma irregular e há menos horas.</p>
-  </details>
+  <details class="cmp-table"><summary id="cmpEvTitle">Preamares e baixamares do período</summary>
+    <div class="cmp-evhead"><button class="chip" id="cmpAll" type="button">Ver todas as marés do registro</button></div>
+    <div class="tablewrap"><table id="cmpEvents"></table></div></details>
 </section>

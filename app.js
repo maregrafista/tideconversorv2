@@ -1,8 +1,6 @@
 'use strict';
 (() => {
-const D = window.TC_DATA, MODELS = D.models, TCH = window.TCH, NRM = TCH.NR / 100, CUR = { method: 'harmA' };
-// o NR de trabalho (66,3 cm acima do zero da régua) substitui o antigo RLS − 0,75 m nos dados históricos
-D.daily.forEach(d => d[1] = d[1] + .75 - NRM); D.monthly.forEach(q => { if (q.mean_R !== null) q.mean_H = q.mean_R - NRM; }); D.comparison.forEach(q => { q.mean_2024 += .75 - NRM; q.mean_2025 += .75 - NRM; });
+const D = window.TC_DATA, MODELS = D.models, TCH = window.TCH, NRM = TCH.NR / 100;
 const $ = id => document.getElementById(id);
 const HM = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const LAST_MODEL = 10, TZ = 'America/Fortaleza';
@@ -49,12 +47,12 @@ function lagBadge(m) {
   return `A partir de 11/08/2026 o registrador passou a amostrar de forma irregular (15 a 60 min). Há ${n} eventos de resolução preferencial em ${HM[m - 1].toLowerCase()}; use "≤65 min · ampliado" com cautela, pois o horário do extremo é estimado por ajuste local.`;
 }
 /* ---------- abas ---------- */
-const PANELS = ['converter', 'lunar', 'history', 'forecast', 'compare', 'carta'];
+const PANELS = ['converter', 'lunar', 'forecast', 'compare', 'carta'];
 function showPanel(name, push = true) {
   if (!PANELS.includes(name)) name = 'converter';
   PANELS.forEach(p => { $(p).hidden = p !== name; $('tab-' + p).setAttribute('aria-selected', p === name); $('tab-' + p).tabIndex = p === name ? 0 : -1; });
   if (push) try { history.replaceState(null, '', '#' + name); } catch {}
-  if (name === 'compare' && window.TCCompare) TCCompare.show(); if (name === 'lunar') drawLagChart(); if (name === 'history') drawHistory(); if (name === 'forecast') renderForecast();
+  if (name === 'compare' && window.TCCompare) TCCompare.show(); if (name === 'lunar') drawLagChart(); if (name === 'forecast' && window.TCForecast) TCForecast.show();
 }
 document.querySelector('.topnav').addEventListener('click', e => { const b = e.target.closest('[data-panel]'); if (b) showPanel(b.dataset.panel); });
 document.querySelector('.topnav').addEventListener('keydown', e => {
@@ -239,217 +237,28 @@ $('exportCSV').onclick = () => {
   download(csv, 'text/csv;charset=utf-8', 'TideConversor_Horarios_2026.csv');
 };
 
-/* ================= HISTÓRICO ================= */
-const hval = q => $('historyDatum').value === 'nr' ? q.mean_H : q.mean_R;
-const refLabel = () => $('historyDatum').value === 'nr' ? 'acima do NR' : 'acima do zero da régua';
-let histScale = 'monthly';
-const YC = { 2024: '--c2024', 2025: '--c2025', 2026: '--c2026' };
-const mrow = (y, m) => D.monthly.find(q => q.year === y && q.month === m);
-function renderHistory() {
-  $('droughtCards').innerHTML = D.comparison.map(q => `<article class="card comparison-card"><h3>${HM[q.month - 1]} · 2024 × 2025${q.partial2024 ? ' *' : ''}</h3><div class="number">${fmt(Math.abs(q.delta_cm), 1)} <small>cm abaixo</small></div><div class="hint">Média acima do NR: ${fmt(q.mean_2024, 3)} m em 2024; ${fmt(q.mean_2025, 3)} m em 2025.<br>${q.days2024} e ${q.days2025} dias válidos.</div></article>`).join('');
-  const yoy = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(m => [mrow(2025, m), mrow(2026, m)]).filter(([a, b]) => a && b && !a.partial && !b.partial && a.mean_H !== null && b.mean_H !== null);
-  $('yoyCards').innerHTML = yoy.map(([a, b]) => { const d = (b.mean_H - a.mean_H) * 100; return `<article class="card comparison-card"><h3>${HM[b.month - 1]} · 2026 × 2025</h3><div class="number">${fmt(Math.abs(d), 1)} <small>cm ${d < 0 ? 'abaixo' : 'acima'}</small></div><div class="hint">Média acima do NR: ${fmt(b.mean_H, 3)} m em 2026; ${fmt(a.mean_H, 3)} m em 2025.<br>${b.valid_days} e ${a.valid_days} dias válidos.</div></article>`; }).join('') || '<p class="note">Sem meses completos comparáveis.</p>';
-  $('historyCaption').textContent = `Médias mensais ${refLabel()} (m). Dias válidos entre parênteses; * mês parcial.`;
-  $('historyTable').innerHTML = HM.map((m, i) => `<tr><td>${m}</td>` + [2024, 2025, 2026].map(y => { const q = mrow(y, i + 1); return `<td>${!q || q.mean_H === null ? '—' : fmt(hval(q), 3) + (q.partial ? '*' : '') + ` <small>(${q.valid_days}/${q.calendar_days})</small>`}</td>`; }).join('') + '</tr>').join('');
-  drawHistory();
-}
-function selectedYears() { return [...document.querySelectorAll('[data-year]:checked')].map(e => +e.dataset.year); }
-function drawHistory() {
-  if ($('history').hidden || $('historyGraphView').hidden) return;
-  const W = wide() ? 420 : 920, el = $('historyChart'), years = selectedYears(), daily = histScale === 'daily';
-  el.setAttribute('viewBox', `0 0 ${W} 320`);
-  $('histMonthly').setAttribute('aria-pressed', !daily); $('histDaily').setAttribute('aria-pressed', daily);
-  $('historyTitle').textContent = daily ? 'Médias diárias sobrepostas por ano' : 'Médias mensais';
-  const dayIdx = s => { const d = new Date(s + 'T00:00:00Z'); return Math.floor((d - Date.UTC(d.getUTCFullYear(), 0, 1)) / 864e5); };
-  const off = $('historyDatum').value === 'nr' ? 0 : NRM;
-  const pts = daily ? D.daily.filter(d => years.includes(+d[0].slice(0, 4))) : D.monthly.filter(q => years.includes(q.year) && q.mean_H !== null);
-  const vs = pts.map(p => daily ? p[1] + off : hval(p));
-  const lo = Math.floor((Math.min(0, ...vs) - .05) * 5) / 5, hi = Math.ceil((Math.max(1, ...vs) + .1) * 5) / 5;
-  const x = daily ? d => 48 + d / 365 * (W - 78) : m => 48 + (m - 1) * (W - 78) / 11, y = v => 250 - (v - lo) / (hi - lo) * 205;
-  const grid = css('--chart-grid'), txt = css('--chart-text');
-  let s = '';
-  for (let k = Math.ceil(lo * 5); k <= Math.floor(hi * 5); k++) { const v = k / 5; s += `<line x1="45" x2="${W - 22}" y1="${y(v)}" y2="${y(v)}" stroke="${grid}"/><text x="35" y="${y(v) + 4}" text-anchor="end" font-size="${fs() - 1}" fill="${txt}">${fmt(v, 1)}</text>`; }
-  s += `<text x="45" y="20" fill="${txt}" font-size="${fs() - 1}">Nível médio ${refLabel()} (m)</text>`;
-  const mdays = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
-  HM.forEach((m, i) => s += `<text x="${daily ? x(mdays[i] + 15) : x(i + 1)}" y="284" text-anchor="middle" font-size="${fs()}" fill="${txt}">${m.slice(0, 3)}</text>`);
-  for (const year of years) {
-    const color = css(YC[year]);
-    if (daily) {
-      const a = D.daily.filter(d => +d[0].slice(0, 4) === year); let path = '', prev = null;
-      a.forEach(d => { const i = dayIdx(d[0]); path += (prev !== null && i - prev <= 2 ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(d[1] + off).toFixed(1) + ' '; prev = i; });
-      s += `<path d="${path}" fill="none" stroke="${color}" stroke-width="1.6"/>`;
-    } else {
-      const a = D.monthly.filter(q => q.year === year && q.mean_H !== null).sort((p, q) => p.month - q.month);
-      a.forEach((q, i) => {
-        const p = a[i - 1];
-        if (p && q.month - p.month === 1) s += `<line x1="${x(p.month)}" y1="${y(hval(p))}" x2="${x(q.month)}" y2="${y(hval(q))}" stroke="${color}" stroke-width="2"/>`;
-        s += `<circle class="history-point" tabindex="0" role="button" data-y="${year}" data-m="${q.month}" cx="${x(q.month)}" cy="${y(hval(q))}" r="5" stroke="${color}" stroke-width="2" fill="${q.partial ? css('--card') : color}" aria-label="${HM[q.month - 1]} de ${year}, ${fmt(hval(q), 3)} metros, ${q.valid_days} dias válidos"><title>${HM[q.month - 1]} ${year}: ${fmt(hval(q), 3)} m · ${q.valid_days}/${q.calendar_days} dias</title></circle>`;
-      });
-    }
-  }
-  el.innerHTML = s;
-  if (!$('historyReadout').dataset.set) $('historyReadout').textContent = (daily ? 'Toque no gráfico para comparar o mesmo dia do ano.' : 'Selecione um ponto no gráfico.') + ' Referência: ' + refLabel() + '.';
-}
-function inspectHistory(e) {
-  const out = $('historyReadout'); out.dataset.set = '1';
-  if (histScale === 'daily') {
-    const el = $('historyChart'), box = el.getBoundingClientRect(), W = +el.getAttribute('viewBox').split(' ')[2], sx = (e.clientX - box.left) / box.width * W, di = Math.round((sx - 48) / (W - 78) * 365);
-    if (di < 0 || di > 365) return;
-    const off = $('historyDatum').value === 'nr' ? 0 : NRM, parts = [];
-    selectedYears().forEach(y => { const t0 = Date.UTC(y, 0, 1) + di * 864e5, iso = new Date(t0).toISOString().slice(0, 10), r = D.daily.find(d => d[0] === iso); parts.push(`${y}: ${r ? fmt(r[1] + off, 3) + ' m' : 'sem dado'}`); });
-    const dd = new Date(Date.UTC(2025, 0, 1) + di * 864e5); out.textContent = `${String(dd.getUTCDate()).padStart(2, '0')}/${String(dd.getUTCMonth() + 1).padStart(2, '0')} · ${parts.join(' · ')} (${refLabel()})`; return;
-  }
-  const p = e.target.closest('[data-y]'); if (!p) return;
-  const q = mrow(+p.dataset.y, +p.dataset.m);
-  out.textContent = `${HM[q.month - 1]} de ${q.year}: ${fmt(hval(q), 3)} m ${refLabel()}. ${q.valid_days} de ${q.calendar_days} dias válidos. ${q.partial ? 'Mês parcial.' : 'Mês completo.'}`;
-}
-setupSubnav($('historyNav'), v => { $('historyRef').hidden = v === 'historySummary'; drawHistory(); });
-$('historyDatum').onchange = () => { $('historyReadout').dataset.set = ''; renderHistory(); };
-document.querySelectorAll('[data-year]').forEach(e => e.onchange = drawHistory);
-$('histMonthly').onclick = () => { histScale = 'monthly'; $('historyReadout').dataset.set = ''; drawHistory(); };
-$('histDaily').onclick = () => { histScale = 'daily'; $('historyReadout').dataset.set = ''; drawHistory(); };
-$('historyChart').onclick = inspectHistory;
-$('historyChart').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inspectHistory(e); } };
-$('exportHistory').onclick = () => {
-  let csv = '﻿Ano;Mes;Media_zero_m;Media_NR_m;Dias_validos;Dias_mes;Parcial\r\n';
-  D.monthly.forEach(q => csv += [q.year, q.month, q.mean_R === null ? '' : fmt(q.mean_R, 6), q.mean_H === null ? '' : fmt(q.mean_H, 6), q.valid_days, q.calendar_days, q.partial ? 'Sim' : 'Nao'].join(';') + '\r\n');
-  download(csv, 'text/csv;charset=utf-8', 'TideConversor_Historico_2024_2026.csv');
-};
-
-/* ================= PREVISÃO ================= */
-// média de defasagem por mês e tipo (eventos de resolução preferencial, todos os ciclos)
-const LAGMEAN = (() => {
-  const g = (m, t) => { const z = D.events.filter(e => e.m === m && e.t === t && e.d).map(e => e.lag); return { n: z.length, mean: z.length ? z.reduce((a, b) => a + b, 0) / z.length : 0 }; };
-  const out = {};
-  for (const t of ['PM', 'BM']) {
-    const pool = D.events.filter(e => e.m <= 7 && e.t === t && e.d).map(e => e.lag), pm = pool.reduce((a, b) => a + b, 0) / pool.length;
-    for (let m = 1; m <= 12; m++) { const r = m <= LAST_MODEL ? g(m, t) : { n: 0 }; out[m + t] = r.n >= 10 ? r.mean : pm; }
-  }
-  return out;
-})();
+/* ================= PREVISÃO: dados para a aba (interface em forecast.js) ================= */
 const PRED = D.predictions.map(([ts, h, type]) => ({ ts, h, type }));
-const PRED_LAG = PRED.map(p => ({ ...p, ts: p.ts + LAGMEAN[monthOf(p.ts) + p.type] * 60000 }));
-const predsFor = (loc, lagOn) => loc === 'faz' && lagOn ? PRED_LAG : PRED;
-function interpT(ts, a) {
-  if (!Number.isFinite(ts) || ts < a[0].ts || ts > a[a.length - 1].ts) return null;
-  let lo = 0, hi = a.length - 1; while (lo < hi) { const mid = (lo + hi) >> 1; if (a[mid].ts < ts) lo = mid + 1; else hi = mid; }
-  if (a[lo].ts === ts) return a[lo].h;
-  const l = a[lo - 1], r = a[lo], u = (ts - l.ts) / (r.ts - l.ts); return l.h + (r.h - l.h) * (1 - Math.cos(Math.PI * u)) / 2;
+function interpT(ts, arr) {
+  if (!Number.isFinite(ts) || ts < arr[0].ts || ts > arr[arr.length - 1].ts) return null;
+  let lo = 0, hi = arr.length - 1; while (lo < hi) { const mid = (lo + hi) >> 1; if (arr[mid].ts < ts) lo = mid + 1; else hi = mid; }
+  if (arr[lo].ts === ts) return arr[lo].h;
+  const l = arr[lo - 1], r = arr[lo], u = (ts - l.ts) / (r.ts - l.ts); return l.h + (r.h - l.h) * (1 - Math.cos(Math.PI * u)) / 2;
 }
-const inRange = (iso, method) => method === 'tabua' ? iso >= '2026-01-01' && iso <= '2026-12-31' : iso >= '2024-01-01' && iso <= '2030-12-31';
-function waterForecast(ts, loc, depth, lagOn, method = CUR.method) {
-  let t = null, h;
-  if (loc === 'faz' && method !== 'tabua') h = (TCH.predictCm(ts, method === 'harmA') - TCH.NR) / 100;
-  else {
-    t = interpT(ts, predsFor(loc, lagOn)); if (t === null) return null; h = t;
-    if (loc === 'faz') { const p = calFor(dateISO(ts)); h = (t - p.a) / p.b - NRM; }
-  }
-  return { t, h, column: depth === null ? null : Math.max(0, depth + h), dry: depth !== null && depth + h < 0 };
-}
-function extremesFor(q) {
-  if (q.location === 'faz' && q.method !== 'tabua') return TCH.extremes(q.day - 12 * 36e5, q.day + 60 * 36e5, q.method === 'harmA').map(e => ({ ts: e.ts, h: (e.cm - TCH.NR) / 100, type: e.type }));
-  return predsFor(q.location, q.lagOn);
-}
-function forecastInputs() {
-  CUR.method = $('forecastLocation').value === 'faz' ? 'harmA' : 'tabua';   // só a previsão que apresentou menos erros
-  const date = $('forecastDate').value, time = $('forecastTime').value, ds = $('forecastDepth').value.trim(), depth = ds === '' ? null : parse(ds);
-  return { date, time, depth, method: CUR.method, location: $('forecastLocation').value, lagOn: $('lagToggle').checked, ts: Date.parse(date + 'T' + time + ':00-03:00'), day: Date.parse(date + 'T00:00:00-03:00'), validDepth: depth === null || (Number.isFinite(depth) && depth >= 0) };
-}
-const fcName = loc => loc === 'faz' ? 'Fazendinha' : 'Porto de Santana';
-function renderForecast() {
-  if ($('forecast').hidden) return;
-  const q = forecastInputs(), w = $('forecastWarning'); w.hidden = true;
-  $('lagToggle').disabled = true; $('fcNote').textContent = '';
-  ['fcLevel', 'fcNextPM', 'fcNextBM'].forEach(i => $(i).textContent = '—'); ['fcTrend', 'fcNextPMs', 'fcNextBMs'].forEach(i => $(i).textContent = '');
-  $('fcColumn').hidden = true; $('tideList').innerHTML = ''; $('forecastChart').innerHTML = '';
-  let why = '';
-  if (!q.date || !q.time || !Number.isFinite(q.ts)) why = 'Selecione uma data e um horário válidos.';
-  else if (!inRange(q.date, q.method)) why = q.method === 'tabua' ? 'A tábua disponível cobre somente 2026.' : 'A previsão harmônica está disponível de 2024 a 2030.';
-  else if (!q.validDepth) why = 'A profundidade deve ser um número maior ou igual a zero, em metros.';
-  if (why) { $('fcSentence').textContent = why; return; }
-  const place = fcName(q.location), harm = q.location === 'faz' && q.method !== 'tabua', arr = extremesFor(q);
-  if (q.location === 'faz' && !harm) { const cb = calBadge(calFor(q.date)); if (cb) { w.textContent = cb; w.hidden = false; } }
-  if (harm) $('fcNote').textContent = q.method === 'harmA' ? 'Previsão harmônica de Fazendinha com as componentes anuais Sa e Ssa. Erro típico de ±10 cm em dados de teste; fora do regime de 2025–2026 o nível médio pode mudar até ±30 cm (seca ou cheia incomuns).' : 'Previsão harmônica de Fazendinha só com as marés (sem Sa e Ssa). Erro típico de ±17 cm em dados de teste; o nível médio do rio não é previsto.';
-  const f = waterForecast(q.ts, q.location, q.depth, q.lagOn), f2 = waterForecast(q.ts + 600000, q.location, q.depth, q.lagOn);
-  const ref = q.location === 'faz' ? 'acima do NR' : 'na tábua';
-  if (f) {
-    const trend = f2 ? (f2.h > f.h + 0.003 ? 'subindo' : f2.h < f.h - 0.003 ? 'baixando' : 'estável') : '';
-    $('fcLevel').innerHTML = fmt(f.h) + ' <small>m</small>'; $('fcTrend').textContent = (trend ? trend.charAt(0).toUpperCase() + trend.slice(1) + ' · ' : '') + ref;
-    $('fcSentence').textContent = `Em ${place}, em ${fmtBR(q.date)} às ${q.time}, o nível previsto é de ${fmt(f.h)} m ${ref}${trend ? ' e a maré está ' + trend : ''}.`;
-    if (q.depth !== null) { $('fcColumn').hidden = false; $('fcColumn').textContent = f.dry ? 'Com a profundidade informada, o fundo fica acima do nível estimado (ponto emerso).' : `Coluna d’água: ${fmt(q.depth)} m (profundidade) + ${fmt(f.h)} m (nível) = ${fmt(f.column)} m.`; }
-  } else { $('fcSentence').textContent = 'Este horário está fora do período coberto pela tábua.'; }
-  const nextOf = type => arr.find(p => p.type === type && p.ts > q.ts);
-  [['PM', 'fcNextPM', 'fcNextPMs'], ['BM', 'fcNextBM', 'fcNextBMs']].forEach(([type, vid, sid]) => {
-    const n = nextOf(type); if (!n) return;
-    const g = waterForecast(n.ts, q.location, q.depth, q.lagOn), mins = Math.round((n.ts - q.ts) / 60000), other = dateISO(n.ts) !== q.date;
-    $(vid).textContent = clock(n.ts) + (other ? ' (dia seguinte)' : ''); $(sid).textContent = `em ${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, '0')} min` + (g ? ' · ' + fmt(g.h) + ' m' : '');
-  });
-  const daily = arr.filter(p => p.ts >= q.day && p.ts < q.day + 86400000), nx = arr.find(p => p.ts > q.ts);
-  $('tideList').innerHTML = daily.length ? daily.map(p => { const g = waterForecast(p.ts, q.location, q.depth, q.lagOn); return `<div class="tide ${nx && p.ts === nx.ts ? 'next' : ''} ${p.ts < q.ts ? 'past' : ''}"><b>${p.type === 'PM' ? '▲ Preamar' : '▼ Baixamar'}${nx && p.ts === nx.ts ? ' · próxima' : ''}</b><span class="t">${clock(p.ts)}</span><span class="h">${g ? fmt(g.h) + ' m ' + ref : ''}</span></div>`; }).join('') : '<p class="note">Sem marés registradas na tábua para este dia.</p>';
-  drawForecast(q, daily);
-}
-function drawForecast(q, daily) {
-  const W = wide() ? 400 : 920, el = $('forecastChart'); el.setAttribute('viewBox', `0 0 ${W} 250`);
-  const pts = []; for (let min = 0; min <= 1440; min += 5) { const ts = q.day + min * 60000, f = waterForecast(ts, q.location, q.depth, q.lagOn); pts.push({ min, v: f ? (q.depth === null ? f.h : f.column) : null }); }
-  const valid = pts.filter(p => p.v !== null); if (!valid.length) return;
-  const vs = valid.map(p => p.v), lo = Math.floor((Math.min(...vs) - .2) * 2) / 2, hi = Math.ceil((Math.max(...vs) + .25) * 2) / 2, x = m => 48 + m / 1440 * (W - 68), y = v => 205 - (v - lo) / (hi - lo) * 170;
-  const grid = css('--chart-grid'), txt = css('--chart-text'), line = css('--pm'), bm = css('--bm'), oc = css('--ochre');
-  let s = `<text x="48" y="16" fill="${txt}" font-size="${fs()}">${q.depth === null ? 'Nível acima do NR (m)' : 'Coluna d’água (m)'}</text>`;
-  const step = hi - lo > 5 ? 1 : .5; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-8; v += step) s += `<line x1="43" x2="${W - 20}" y1="${y(v)}" y2="${y(v)}" stroke="${grid}"/><text x="35" y="${y(v) + 4}" text-anchor="end" fill="${txt}" font-size="${fs() - 1}">${fmt(v, 1)}</text>`;
-  let path = ''; pts.forEach((p, i) => { if (p.v === null) return; path += (i > 0 && pts[i - 1].v !== null ? 'L' : 'M') + x(p.min).toFixed(1) + ',' + y(p.v).toFixed(1) + ' '; });
-  s += `<path d="${path}" fill="none" stroke="${line}" stroke-width="2.5"/>`;
-  daily.forEach(p => { const f = waterForecast(p.ts, q.location, q.depth, q.lagOn), v = f ? (q.depth === null ? f.h : f.column) : null; if (v === null) return; const cx = x((p.ts - q.day) / 60000); s += `<circle cx="${cx}" cy="${y(v)}" r="4" fill="${bm}"><title>${p.type} · ${clock(p.ts)} · ${fmt(v)} m</title></circle><text x="${cx}" y="${p.type === 'PM' ? y(v) - 9 : y(v) + 17}" text-anchor="middle" font-size="${fs() - 1}" fill="${txt}">${clock(p.ts)}</text>`; });
-  for (let h = 0; h <= 24; h += 3) s += `<text x="${x(h * 60)}" y="238" text-anchor="middle" fill="${txt}" font-size="${fs()}">${String(h).padStart(2, '0')}h</text>`;
-  if (q.date === NOW.date) { const nm = (Date.now() - q.day) / 60000; if (nm >= 0 && nm <= 1440) s += `<line x1="${x(nm)}" x2="${x(nm)}" y1="30" y2="210" stroke="${txt}" stroke-width="1" stroke-dasharray="2 3"/><text x="${x(nm)}" y="26" text-anchor="middle" font-size="${fs() - 2}" fill="${txt}">agora</text>`; }
-  const sel = waterForecast(q.ts, q.location, q.depth, q.lagOn);
-  if (sel) { const v = q.depth === null ? sel.h : sel.column, cx = x((q.ts - q.day) / 60000); s += `<line x1="${cx}" x2="${cx}" y1="30" y2="210" stroke="${oc}" stroke-dasharray="4 4"/><circle cx="${cx}" cy="${y(v)}" r="5.5" fill="${oc}"/>`; }
-  el.innerHTML = s;
-}
-function shiftDay(n) {
-  const d = new Date($('forecastDate').value + 'T12:00:00Z'); if (isNaN(d)) return;
-  d.setUTCDate(d.getUTCDate() + n); const iso = d.toISOString().slice(0, 10); if (!inRange(iso, forecastInputs().method)) return toast('Data fora do período disponível'); $('forecastDate').value = iso; renderForecast();
-}
-function setNow() {
-  const n = nowParts();
-  if (inRange(n.date, forecastInputs().method)) { $('forecastDate').value = n.date; $('forecastTime').value = n.time; } else { $('forecastDate').value = '2026-01-01'; $('forecastTime').value = '12:00'; toast('A data atual está fora do período disponível'); }
-  renderForecast();
-}
-function syncDateRange() { const m = forecastInputs().method, lo = m === 'tabua' ? '2026-01-01' : '2024-01-01', hi = m === 'tabua' ? '2026-12-31' : '2030-12-31'; $('forecastDate').min = lo; $('forecastDate').max = hi; if ($('forecastDate').value < lo) $('forecastDate').value = lo; if ($('forecastDate').value > hi) $('forecastDate').value = hi; }
-['forecastLocation', 'forecastDate', 'forecastTime', 'lagToggle'].forEach(id => $(id).addEventListener('change', () => { if (id === 'forecastLocation') $('forecastDepth').value = ''; if (id === 'forecastLocation') syncDateRange(); renderForecast(); }));
-$('forecastDepth').addEventListener('input', renderForecast);
-$('dayPrev').onclick = () => shiftDay(-1); $('dayNext').onclick = () => shiftDay(1); $('nowBtn').onclick = setNow;
-$('forecastChart').onclick = e => {
-  const box = $('forecastChart').getBoundingClientRect(), W = +$('forecastChart').getAttribute('viewBox').split(' ')[2], sx = (e.clientX - box.left) / box.width * W;
-  if (sx < 48 || sx > W - 20) return;
-  const m = Math.max(0, Math.min(1435, Math.round((sx - 48) / (W - 68) * 1440 / 5) * 5));
-  $('forecastTime').value = String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); renderForecast();
+window.TCHost = {
+  value: (ts, loc) => loc === 'san' ? interpT(ts, PRED) : (TCH.predictCm(ts, true) - TCH.NR) / 100,
+  extremes: (day, loc) => loc === 'san' ? PRED : TCH.extremes(day - 12 * 36e5, day + 60 * 36e5, true).map(e => ({ ts: e.ts, h: (e.cm - TCH.NR) / 100, type: e.type }))
 };
-$('exportForecast').onclick = () => {
-  const q = forecastInputs(); if (!q.validDepth || !Number.isFinite(q.day) || !inRange(q.date, q.method)) return toast('Revise data e profundidade');
-  let csv = '﻿Local;Data_hora_UTC-03;Nivel_NR_m;Profundidade_NR_m;Coluna_m;Metodo\r\n';
-  const met = q.location === 'faz' && q.method !== 'tabua' ? 'Previsao harmonica de Fazendinha (B02' + (q.method === 'harmA' ? ' + Sa/Ssa' : ' so mares') + '); NR ' + fmt(NRM, 3) + ' m' : 'Interpolacao cossenoidal da tabua' + (q.location === 'faz' ? (q.lagOn ? '; defasagem media aplicada (experimental)' : '; sem correcao de fase local') : '');
-  for (let min = 0; min < 1440; min += 15) { const ts = q.day + min * 60000, f = waterForecast(ts, q.location, q.depth, q.lagOn); csv += [q.location, q.date + ' ' + clock(ts), f ? fmt(f.h, 5) : '', q.depth === null ? '' : fmt(q.depth, 5), f && f.column !== null ? fmt(f.column, 5) : '', met].join(';') + '\r\n'; }
-  download(csv, 'text/csv;charset=utf-8', 'TideConversor_Previsao_' + q.date + '.csv');
-};
-
-function fillQuadro() {
-  const q = TCH.quadro, nr = TCH.NR, row = (l, v) => `<tr><td>${l}</td><td>${fmt(v / 100)}</td><td>${fmt((v + nr) / 100)}</td></tr>`;
-  $('quadroBody').innerHTML = row('Preamar média de sizígia (MHWS)', q.MHWS) + row('Preamar média de quadratura (MHWN)', q.MHWN) + row('Nível médio (Zo)', q.Zo) + row('Baixamar média de quadratura (MLWN)', q.MLWN) + row('Baixamar média de sizígia (MLWS)', q.MLWS);
-  const hh = Math.floor(q.HWFC_h), mm = Math.round((q.HWFC_h - hh) * 60);
-  $('quadroNote').textContent = `Maré semidiurna pura (F de Courtier = ${fmt(q.F, 3)}). Estabelecimento do porto (HWF&C): ${hh} h ${String(mm).padStart(2, '0')} min. NR = S0 − (M2 + S2 + N2 + K2) = ${fmt(q.S0 / 100)} − ${fmt(q.Zo / 100)} = ${fmt(q.NR / 100)} m acima do zero da régua (método do Alte Franco, 1997). S0 anual = nível médio ajustado com as componentes anuais.`;
-}
-window.TCApp = { waterForecast, fmt, css, download, toast, NRM, wide, signed };
+window.TCApp = { fmt, css, download, toast, NRM, wide, signed };
 /* ================= início ================= */
 const defMonth = NOW.year === 2026 ? NOW.month : 1;
 const richMonth = [7, 6, 5, 4, 3, 2, 1].find(m => D.events.filter(e => e.m === m && e.t === 'PM' && e.d && e.dist <= 2).length >= 15) || 1;
 monthOptions($('lunarMonth'), richMonth);
 $('calDate').value = NOW.year === 2026 ? NOW.date : '2026-01-01';
-fillModelTable(); fillQuadro(); renderConverter(); renderLunar(); renderHistory();
-$('historyReadout').textContent = 'Selecione um ponto no gráfico. Referência: ' + refLabel() + '.';
-$('forecastDate').value = NOW.year === 2026 ? NOW.date : '2026-01-01'; $('forecastTime').value = NOW.year === 2026 ? NOW.time : '12:00';
+fillModelTable(); renderConverter(); renderLunar();
 showPanel((location.hash || '').slice(1), false);
-window.addEventListener('resize', () => { drawLagChart(); drawHistory(); renderForecast(); });
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { renderConverter(); drawLagChart(); drawHistory(); renderForecast(); });
+window.addEventListener('resize', () => { drawLagChart(); });
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { renderConverter(); drawLagChart(); if (window.TCForecast) TCForecast.show(); });
 window.addEventListener('hashchange', () => showPanel(location.hash.slice(1), false));
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
