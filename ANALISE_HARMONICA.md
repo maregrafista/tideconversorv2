@@ -1,5 +1,8 @@
 # Análise harmônica, NR e previsão — Fazendinha (blocos 02 e 04)
 
+> **Atualização v2.2 (23/10/2026):** o site passou a usar as 113 constantes geradas pelo PACMARÉ para o bloco 02 (`analise/pacmare/AH_02.txt`, `CH_B02.txt`). Comparadas com as 57 deste documento, elas reduziram o erro horário de 12,1→10,1 cm (B03), 11,8→9,5 cm (B04), 26,3→24,1 cm (B01) e 11,6→8,7 cm (B02, ajuste). Tabelas em `data/comparacao_meu_vs_pacmare_*.csv`. O restante deste texto descreve a análise própria anterior.
+
+
 Análise com o método do ANHAMA (frequência/FFT, seção 1). Dados: `FAZEND_B02.txt` (26/02/2025 a 05/01/2026, 7.510 h, 312,9 d) e `FAZEND_B04.txt` (24/03 a 31/07/2026, 3.082 h, 128,4 d). Alturas horárias em cm; para a análise foram devolvidas ao zero da régua (RLS = arquivo + 75 cm).
 
 ## 1. Método: reprodução do ANHAMA e conferência com a saída oficial

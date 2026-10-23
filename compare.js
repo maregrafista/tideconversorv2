@@ -15,7 +15,7 @@
   const parseLocal = s => Date.parse(s.length > 10 ? s + '-03:00' : s + 'T00:00:00-03:00');
   const fmt = (v, n = 0) => A.fmt(v, n), sgn = (v, n = 0) => (v > 0.0049 ? '+' : v < -0.0049 ? '−' : '') + A.fmt(Math.abs(v), n);
   const lb = x => { let lo = 0, hi = N; while (lo < hi) { const m = (lo + hi) >> 1; if (T[m] < x) lo = m + 1; else hi = m; } return lo; };
-  const SPARSE = parseLocal('2026-08-11'), FIT = [TCH.blocks[2], TCH.blocks[4]].map(b => b.map(parseLocal)), B01 = TCH.blocks[1].map(parseLocal);
+  const SPARSE = parseLocal('2026-08-11'), FIT = [TCH.blocks[2]].map(b => b.map(parseLocal)), B01 = TCH.blocks[1].map(parseLocal);
   const inFit = t => FIT.some(([a, b]) => t >= a && t <= b);
   let P = null; const pred = () => P || (P = Float64Array.from(T, t => TCH.predictCm(t, true)));
   const m_ = cm => (cm - NR) / 100;

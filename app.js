@@ -369,7 +369,7 @@ function renderForecast() {
   if (why) { $('fcSentence').textContent = why; return; }
   const place = fcName(q.location), harm = q.location === 'faz' && q.method !== 'tabua', arr = extremesFor(q);
   if (q.location === 'faz' && !harm) { const cb = calBadge(calFor(q.date)); if (cb) { w.textContent = cb; w.hidden = false; } }
-  if (harm) $('fcNote').textContent = q.method === 'harmA' ? 'Previsão harmônica de Fazendinha com as componentes anuais Sa e Ssa. Erro típico de ±12 cm em dados de teste; fora do regime de 2025–2026 o nível médio pode mudar até ±30 cm (seca ou cheia incomuns).' : 'Previsão harmônica de Fazendinha só com as marés (sem Sa e Ssa). Erro típico de ±17 cm em dados de teste; o nível médio do rio não é previsto.';
+  if (harm) $('fcNote').textContent = q.method === 'harmA' ? 'Previsão harmônica de Fazendinha com as componentes anuais Sa e Ssa. Erro típico de ±10 cm em dados de teste; fora do regime de 2025–2026 o nível médio pode mudar até ±30 cm (seca ou cheia incomuns).' : 'Previsão harmônica de Fazendinha só com as marés (sem Sa e Ssa). Erro típico de ±17 cm em dados de teste; o nível médio do rio não é previsto.';
   const f = waterForecast(q.ts, q.location, q.depth, q.lagOn), f2 = waterForecast(q.ts + 600000, q.location, q.depth, q.lagOn);
   const ref = q.location === 'faz' ? 'acima do NR' : 'na tábua';
   if (f) {

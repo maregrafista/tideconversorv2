@@ -1,0 +1,13 @@
+﻿bloco;modelo;n;vies;rmse;dp;mae;p95
+1;Meu (B02+Sa/Ssa, S0 anual);10003;22,28;26,3;13,98;23,34;42,31
+1;PACMARE (113 const., nivel medio proprio);10003;23,66;25,65;9,91;23,77;38,02
+1;PACMARE com S0 anual;10003;21,97;24,1;9,91;22,16;36,33
+2;Meu (B02+Sa/Ssa, S0 anual);90201;-1,1;11,61;11,56;9,14;22,81
+2;PACMARE (113 const., nivel medio proprio);90201;0,64;8,64;8,62;6,76;17,27
+2;PACMARE com S0 anual;90201;-1,05;8,68;8,62;6,79;17,38
+3;Meu (B02+Sa/Ssa, S0 anual);17843;1,99;12,12;11,96;9,69;22,68
+3;PACMARE (113 const., nivel medio proprio);17843;4,33;10,67;9,75;8,57;20,03
+3;PACMARE com S0 anual;17843;2,64;10,1;9,75;8,01;19,12
+4;Meu (B02+Sa/Ssa, S0 anual);36977;2,66;11,84;11,54;9,01;24,41
+4;PACMARE (113 const., nivel medio proprio);36977;5,23;10,29;8,86;8,11;20,24
+4;PACMARE com S0 anual;36977;3,54;9,54;8,86;7,4;19,12

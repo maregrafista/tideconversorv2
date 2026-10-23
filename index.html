@@ -17,7 +17,7 @@
   <div class="top">
     <div class="brand">
       <img class="institution-logo" src="logo.png" alt="Logotipo UNIPILOT" width="34" height="37">
-      <div><strong>TideConversor <em>v2.1</em></strong><span>Fazendinha &amp; Santana</span></div>
+      <div><strong>TideConversor <em>v2.2</em></strong><span>Fazendinha &amp; Santana</span></div>
     </div>
     <nav class="topnav" role="tablist" aria-label="Ferramentas">
       <button role="tab" id="tab-converter" data-panel="converter" aria-selected="true" aria-controls="converter">Alturas</button>
@@ -276,10 +276,10 @@
   </details>
 
   <details class="method"><summary>Como a previsão é calculada</summary>
-    <p><b>Harmônica de Fazendinha (padrão).</b> O nível é a soma de ondas senoidais: nível = S0 + Σ f·H·cos(V0 + u − G), com as 57 constantes harmônicas obtidas da série de 313 dias do bloco 02 (análise por espécie, correções f e u, inferência e rejeição a 95 %, como no ANHAMA do PACMARÉ). Os argumentos astronômicos são os de Schureman. A previsão vale para qualquer data de 2024 a 2030, mas as componentes mais lentas dependem do regime do rio observado em 2025–2026.</p>
-    <p><b>Componentes anuais.</b> Sa (20,2 cm) e Ssa (8,6 cm) foram ajustadas ao resíduo dos blocos 02 e 04 (441 dias) e deslocam o nível médio ao longo do ano, porque o rio sobe e desce. Em dados que não entraram no ajuste, elas reduzem o erro de 17,7 para 12,1 cm (bloco 03) e de 52 para 26 cm (seca de 2024). Valem enquanto o regime do rio se parecer com 2025–2026.</p>
-    <p><b>Nível de redução.</b> NR = S0 − (M2 + S2 + N2 + K2) = 229,7 − 163,0 = 66,7 cm acima do zero da régua (método do Alte Franco, 1997). O nível mostrado é o nível acima do NR.</p>
-    <p><b>Escolha da previsão.</b> Foram comparadas a harmônica só com marés, a harmônica com as componentes anuais, as constantes do bloco 04 e a tábua de Santana convertida; a harmônica com componentes anuais teve o menor erro em todos os conjuntos de teste e é a única usada para Fazendinha. Para o Porto de Santana é usada a tábua oficial de 2026.</p>
+    <p><b>Harmônica de Fazendinha (padrão).</b> O nível é a soma de ondas senoidais: nível = S0 + Σ f·H·cos(V0 + u − G), com as 113 constantes harmônicas da análise do PACMARÉ (ANHAMA) da série de 313 dias do bloco 02 (correções f e u, inferência e rejeição a 95 %). Os argumentos astronômicos são os de Schureman. A previsão vale para qualquer data de 2024 a 2030, mas as componentes mais lentas dependem do regime do rio observado em 2025–2026.</p>
+    <p><b>Componentes anuais.</b> Sa (21,6 cm) e Ssa (8,3 cm) vêm da mesma análise do PACMARÉ e deslocam o nível médio ao longo do ano, porque o rio sobe e desce. Em dados que não entraram no ajuste, o erro típico é de 10,1 cm (bloco 03), 9,5 cm (bloco 04) e 24 cm na seca de 2024 (bloco 01). Valem enquanto o regime do rio se parecer com 2025–2026.</p>
+    <p><b>Nível de redução.</b> NR de trabalho = 66,7 cm acima do zero da régua (S0 anual 229,7 − 163,0, método do Alte Franco, 1997). Com as constantes do PACMARÉ a mesma fórmula dá 66,3 cm; a diferença de 0,4 cm não foi aplicada. O nível mostrado é o nível acima do NR.</p>
+    <p><b>Escolha da previsão.</b> Foram comparadas a harmônica com as 57 constantes de ajuste próprio e a com as 113 constantes do PACMARÉ (ambas com Sa e Ssa); a do PACMARÉ teve o menor erro em todos os blocos e é a única usada para Fazendinha. Para o Porto de Santana é usada a tábua oficial de 2026.</p>
   </details>
 </section>
 
@@ -326,7 +326,7 @@
   <details><summary>Como ler estes números</summary>
     <p><b>Erro típico (RMSE)</b>: diferença entre previsto e observado, em centímetros; erros grandes pesam mais. <b>Viés</b>: se a previsão ficou, em média, acima (+) ou abaixo (−) da água. <b>9 em cada 10 horas</b>: o erro máximo em 90 % das horas. <b>Horário</b>: diferença média entre a hora prevista e a observada para preamares e baixamares.</p>
     <p><b>Avaliação:</b> até 10 cm, muito boa; até 15 cm, boa; até 25 cm, razoável; acima disso, fraca (a água do rio muda o nível médio e a previsão não acompanha).</p>
-    <p>A previsão é a harmônica de Fazendinha com as componentes anuais. As marés foram ajustadas com o bloco B02 (fev/2025 a jan/2026) e as componentes anuais com B02 + B04 (mar a jul/2026). <b>Dados fora desses períodos são teste</b>: nov–dez/2024 e jan–mar/2026. Nos períodos usados no ajuste o erro é menor por construção. As observações são valores horários da régua; depois de 11/08/2026 o registrador grava de forma irregular e há menos horas.</p>
+    <p>A previsão é a harmônica de Fazendinha com as componentes anuais. As 113 constantes (marés e componentes anuais Sa e Ssa) vêm da análise do PACMARÉ do bloco B02 (fev/2025 a jan/2026). <b>Dados fora desse período são teste</b>: nov–dez/2024 e jan–jul/2026. Nos períodos usados no ajuste o erro é menor por construção. As observações são valores horários da régua; depois de 11/08/2026 o registrador grava de forma irregular e há menos horas.</p>
   </details>
 </section>
 </main>
@@ -343,7 +343,7 @@
   </dl>
 </details>
 <footer>
-  <p>Desenvolvido pelo Setor de Hidrografia da UNIPILOT · <b>Atualizado em 23/10/2026 · v2.1</b> · Dados de calibração de 2026 · Não substitui a Tábua de Marés oficial da DHN nem serve à navegação.</p>
+  <p>Desenvolvido pelo Setor de Hidrografia da UNIPILOT · <b>Atualizado em 23/10/2026 · v2.2</b> · Dados de calibração de 2026 · Não substitui a Tábua de Marés oficial da DHN nem serve à navegação.</p>
   <p><button class="textbutton" id="installOffline" hidden>Instalar</button> <a href="README.md">Documentação</a> · <a href="ANALISE_HARMONICA.md">Análise harmônica</a> · <a href="ANALISE.md">Reanálise dos dados</a></p>
 </footer>
 

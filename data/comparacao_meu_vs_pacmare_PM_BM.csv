@@ -1,0 +1,25 @@
+﻿bloco;modelo;tipo;n;t_vies;t_mae;h_vies;h_mae;h_dp
+1;Meu (B02+Sa/Ssa, S0 anual);PM;67;2,1;7,2;27,3;27,3;12,4
+1;Meu (B02+Sa/Ssa, S0 anual);BM;67;16,6;19,3;23,4;23,4;10,8
+1;PACMARE (113 const., nivel medio proprio);PM;67;-10,7;12,4;28,2;28,2;7,9
+1;PACMARE (113 const., nivel medio proprio);BM;67;13,3;14,9;25,4;25,4;6,2
+1;PACMARE com S0 anual;PM;67;-10,7;12,4;26,5;26,5;7,9
+1;PACMARE com S0 anual;BM;67;13,3;14,9;23,7;23,7;6,2
+2;Meu (B02+Sa/Ssa, S0 anual);PM;607;8,7;10,5;-2,2;8,8;11,2
+2;Meu (B02+Sa/Ssa, S0 anual);BM;606;-6,8;11,9;-0,3;8,0;10,1
+2;PACMARE (113 const., nivel medio proprio);PM;607;3,6;8,4;0,5;6,5;8,2
+2;PACMARE (113 const., nivel medio proprio);BM;606;-0,8;7,4;1,4;6,3;7,8
+2;PACMARE com S0 anual;PM;607;3,6;8,4;-1,2;6,5;8,2
+2;PACMARE com S0 anual;BM;606;-0,8;7,4;-0,3;6,2;7,8
+3;Meu (B02+Sa/Ssa, S0 anual);PM;121;13,8;15,0;-0,3;8,1;9,7
+3;Meu (B02+Sa/Ssa, S0 anual);BM;121;-7,2;11,0;3,5;9,7;11,0
+3;PACMARE (113 const., nivel medio proprio);PM;121;9,1;11,0;2,0;6,6;8,0
+3;PACMARE (113 const., nivel medio proprio);BM;121;-0,1;7,6;5,7;9,6;9,6
+3;PACMARE com S0 anual;PM;121;9,1;11,0;0,4;6,5;8,0
+3;PACMARE com S0 anual;BM;121;-0,1;7,6;4,0;8,9;9,6
+4;Meu (B02+Sa/Ssa, S0 anual);PM;250;9,1;11,3;-1,3;8,4;10,1
+4;Meu (B02+Sa/Ssa, S0 anual);BM;249;-10,7;11,6;3,9;8,7;10,2
+4;PACMARE (113 const., nivel medio proprio);PM;250;8,7;10,8;5,7;8,6;8,7
+4;PACMARE (113 const., nivel medio proprio);BM;249;0,4;7,7;2,4;6,8;7,9
+4;PACMARE com S0 anual;PM;250;8,7;10,8;4,0;7,9;8,7
+4;PACMARE com S0 anual;BM;249;0,4;7,7;0,7;6,6;7,9
