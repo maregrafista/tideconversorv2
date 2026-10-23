@@ -351,7 +351,7 @@ function extremesFor(q) {
   return predsFor(q.location, q.lagOn);
 }
 function forecastInputs() {
-  CUR.method = $('forecastLocation').value === 'faz' ? $('forecastMethod').value : 'tabua';
+  CUR.method = $('forecastLocation').value === 'faz' ? 'harmA' : 'tabua';   // só a previsão que apresentou menos erros
   const date = $('forecastDate').value, time = $('forecastTime').value, ds = $('forecastDepth').value.trim(), depth = ds === '' ? null : parse(ds);
   return { date, time, depth, method: CUR.method, location: $('forecastLocation').value, lagOn: $('lagToggle').checked, ts: Date.parse(date + 'T' + time + ':00-03:00'), day: Date.parse(date + 'T00:00:00-03:00'), validDepth: depth === null || (Number.isFinite(depth) && depth >= 0) };
 }
@@ -359,7 +359,7 @@ const fcName = loc => loc === 'faz' ? 'Fazendinha' : 'Porto de Santana';
 function renderForecast() {
   if ($('forecast').hidden) return;
   const q = forecastInputs(), w = $('forecastWarning'); w.hidden = true;
-  $('lagToggle').disabled = q.location !== 'faz' || q.method !== 'tabua'; $('forecastMethod').disabled = q.location !== 'faz'; $('fcNote').textContent = '';
+  $('lagToggle').disabled = true; $('fcNote').textContent = '';
   ['fcLevel', 'fcNextPM', 'fcNextBM'].forEach(i => $(i).textContent = '—'); ['fcTrend', 'fcNextPMs', 'fcNextBMs'].forEach(i => $(i).textContent = '');
   $('fcColumn').hidden = true; $('tideList').innerHTML = ''; $('forecastChart').innerHTML = '';
   let why = '';
@@ -415,7 +415,7 @@ function setNow() {
   renderForecast();
 }
 function syncDateRange() { const m = forecastInputs().method, lo = m === 'tabua' ? '2026-01-01' : '2024-01-01', hi = m === 'tabua' ? '2026-12-31' : '2030-12-31'; $('forecastDate').min = lo; $('forecastDate').max = hi; if ($('forecastDate').value < lo) $('forecastDate').value = lo; if ($('forecastDate').value > hi) $('forecastDate').value = hi; }
-['forecastLocation', 'forecastDate', 'forecastTime', 'lagToggle', 'forecastMethod'].forEach(id => $(id).addEventListener('change', () => { if (id === 'forecastLocation') $('forecastDepth').value = ''; if (id === 'forecastLocation' || id === 'forecastMethod') syncDateRange(); renderForecast(); }));
+['forecastLocation', 'forecastDate', 'forecastTime', 'lagToggle'].forEach(id => $(id).addEventListener('change', () => { if (id === 'forecastLocation') $('forecastDepth').value = ''; if (id === 'forecastLocation') syncDateRange(); renderForecast(); }));
 $('forecastDepth').addEventListener('input', renderForecast);
 $('dayPrev').onclick = () => shiftDay(-1); $('dayNext').onclick = () => shiftDay(1); $('nowBtn').onclick = setNow;
 $('forecastChart').onclick = e => {

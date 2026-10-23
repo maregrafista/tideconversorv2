@@ -4,9 +4,7 @@
   const $ = id => document.getElementById(id), A = window.TCApp, TCH = window.TCH;
   const T = TCH.OBS_T, V = TCH.OBS_V, NR = TCH.NR, N = T.length, H3 = 36e5, DAY = 864e5;
   const MODELS = [
-    { k: 'harmA', label: 'Harmônica + anuais (B02 + Sa/Ssa)', col: '#1b9664', on: true },
-    { k: 'harm', label: 'Harmônica só marés (B02)', col: '#eb6834', on: true },
-    { k: 'tabua', label: 'Tábua de Santana convertida', col: '#6250d6', on: false }
+    { k: 'harmA', label: 'Harmônica + componentes anuais', col: '#1b9664', on: true }
   ];
   const P = {};                       // previsões (cm acima do zero da régua) nas horas observadas, preenchidas sob demanda
   const loc = ms => new Date(ms - 3 * H3), pad = n => String(n).padStart(2, '0');
@@ -40,11 +38,8 @@
 
   function build() {
     $('cmpPresets').innerHTML = PRESETS.map(p => `<button class="chip" data-p="${p.id}" aria-pressed="false">${p.label}</button>`).join('');
-    $('cmpModels').innerHTML = MODELS.map(m => `<label><input type="checkbox" data-m="${m.k}" ${m.on ? 'checked' : ''}><i style="background:${m.col}"></i>${m.label}</label>`).join('');
-    $('cmpScatterModel').innerHTML = MODELS.map(m => `<option value="${m.k}">${m.label}</option>`).join('');
     $('cmpPresets').onclick = e => { const b = e.target.closest('[data-p]'); if (b) setPreset(b.dataset.p); };
-    $('cmpModels').onchange = e => { const c = e.target.closest('[data-m]'); if (!c) return; MODELS.find(m => m.k === c.dataset.m).on = c.checked; draw(); };
-    $('cmpRef').onchange = draw; $('cmpScatterModel').onchange = drawScatter;
+    $('cmpRef').onchange = draw;
     $('cmpFrom').onchange = $('cmpTo').onchange = () => { const a = parseLocal($('cmpFrom').value), b = parseLocal($('cmpTo').value) + DAY; if (a < b) { win = [a, b]; base = win.slice(); setPressed(null); draw(); } };
     $('cmpCsv').onclick = exportCsv;
     attach($('cmpMain')); attach($('cmpErr'));
@@ -132,7 +127,7 @@
       rows.map(({ m, s }) => s ? `<tr><td><i style="background:${m.col};display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px"></i>${m.label}</td><td>${A.fmt(s.n, 0)}</td><td>${A.signed(s.bias)}</td><td class="${s.rmse === best ? 'best' : ''}">${f(s.rmse)}</td><td>${f(s.mae)}</td><td>${f(s.p95)}</td><td>${f(s.r, 3)}</td></tr>` : `<tr><td>${m.label}</td><td colspan="6">sem previsão neste período</td></tr>`).join('') + '</tbody>';
   }
   function drawScatter() {
-    const c = $('cmpScatter'); if (!c.clientWidth || !win) return; const { x, w, h } = setup(c), k = $('cmpScatterModel').value, p = pred(k), i0 = lb(win[0]), i1 = lb(win[1] + 1);
+    const c = $('cmpScatter'); if (!c.clientWidth || !win) return; const { x, w, h } = setup(c), k = 'harmA', p = pred(k), i0 = lb(win[0]), i1 = lb(win[1] + 1);
     let lo = Infinity, hi = -Infinity; for (let i = i0; i < i1; i++) { if (Number.isFinite(p[i])) { lo = Math.min(lo, p[i], V[i]); hi = Math.max(hi, p[i], V[i]); } }
     if (!Number.isFinite(lo)) { x.fillStyle = A.css('--chart-text'); x.fillText('sem previsão neste período', 20, 30); return; }
     lo = toM(lo) - .1; hi = toM(hi) + .1; const L = 44, B = 28, S = Math.min(w - L - 10, h - B - 10), X = v => L + (v - lo) / (hi - lo) * S, Y = v => 10 + S - (v - lo) / (hi - lo) * S;

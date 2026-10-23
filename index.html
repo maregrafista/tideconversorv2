@@ -231,9 +231,7 @@
       <div class="inputbox"><button class="step" id="dayPrev" type="button" aria-label="Dia anterior">‹</button><input type="date" id="forecastDate" min="2026-01-01" max="2026-12-31"><button class="step" id="dayNext" type="button" aria-label="Próximo dia">›</button></div></div>
     <div><label class="label" for="forecastTime">3 · Hora (Brasília)</label>
       <div class="inputbox"><input type="time" id="forecastTime"><button class="step wide" id="nowBtn" type="button">Agora</button></div></div>
-    <div class="wide"><label class="label" for="forecastMethod">4 · Método</label>
-      <select id="forecastMethod"><option value="harmA">Harmônica de Fazendinha + componentes anuais (recomendado)</option><option value="harm">Harmônica de Fazendinha, só marés</option><option value="tabua">Tábua de Santana convertida pela calibração</option></select></div>
-  </div>
+    </div>
 
   <div class="warning" id="forecastWarning" role="status" hidden></div>
 
@@ -271,7 +269,7 @@
       <div><label class="label" for="forecastDepth">Profundidade do local ao NR (opcional)</label>
         <div class="inputbox"><input id="forecastDepth" inputmode="decimal" placeholder="ex.: 6,50" autocomplete="off"><span>m</span></div>
         <p class="note">Se você souber a profundidade do fundo medida a partir do NR, o app calcula a coluna d’água (profundidade + nível).</p></div>
-      <label class="check"><input type="checkbox" id="lagToggle"> Ajustar os horários pela defasagem média observada em Fazendinha <small>(experimental: a preamar tende a ocorrer ~15 min antes da prevista em Santana)</small></label>
+      <label class="check" hidden><input type="checkbox" id="lagToggle"> Ajustar os horários pela defasagem média observada em Fazendinha <small>(experimental: a preamar tende a ocorrer ~15 min antes da prevista em Santana)</small></label>
       <button class="textbutton" id="exportForecast">Baixar o dia em CSV (a cada 15 min)</button>
     </div>
   </details>
@@ -280,7 +278,7 @@
     <p><b>Harmônica de Fazendinha (padrão).</b> O nível é a soma de ondas senoidais: nível = S0 + Σ f·H·cos(V0 + u − G), com as 57 constantes harmônicas obtidas da série de 313 dias do bloco 02 (análise por espécie, correções f e u, inferência e rejeição a 95 %, como no ANHAMA do PACMARÉ). Os argumentos astronômicos são os de Schureman. A previsão vale para qualquer data de 2024 a 2030, mas as componentes mais lentas dependem do regime do rio observado em 2025–2026.</p>
     <p><b>Componentes anuais.</b> Sa (20,2 cm) e Ssa (8,6 cm) foram ajustadas ao resíduo dos blocos 02 e 04 (441 dias) e deslocam o nível médio ao longo do ano, porque o rio sobe e desce. Em dados que não entraram no ajuste, elas reduzem o erro de 17,7 para 12,1 cm (bloco 03) e de 52 para 26 cm (seca de 2024). Valem enquanto o regime do rio se parecer com 2025–2026.</p>
     <p><b>Nível de redução.</b> NR = S0 − (M2 + S2 + N2 + K2) = 229,7 − 163,0 = 66,7 cm acima do zero da régua (método do Alte Franco, 1997). O nível mostrado é o nível acima do NR.</p>
-    <p><b>Tábua de Santana convertida.</b> Usa os 1.411 extremos da tábua de 2026 com interpolação cossenoidal e a calibração local da data; é útil como referência, mas só vale para 2026 e erra mais.</p>
+    <p><b>Escolha da previsão.</b> Foram comparadas a harmônica só com marés, a harmônica com as componentes anuais, as constantes do bloco 04 e a tábua de Santana convertida; a harmônica com componentes anuais teve o menor erro em todos os conjuntos de teste e é a única usada para Fazendinha. Para o Porto de Santana é usada a tábua oficial de 2026.</p>
   </details>
 </section>
 
@@ -290,7 +288,7 @@
     <div><h2>Previsto × observado</h2><p class="sub">Compare a previsão com o que a régua registrou e veja o erro</p></div>
     <div class="section-actions"><button class="textbutton" id="cmpCsv">Exportar CSV</button><button class="textbutton" data-method="compare">Como o erro é calculado</button></div>
   </div>
-  <p class="intro">A linha preta é o nível <b>observado</b> na régua de Fazendinha (valores horários). As linhas coloridas são as <b>previsões</b>. O gráfico de baixo mostra o <b>erro</b> (previsto − observado): acima de zero, a previsão ficou mais alta que a água. Escolha um período, <b>arraste sobre o gráfico</b> para ampliar e veja a tabela de erros do trecho visível.</p>
+  <p class="intro">A linha preta é o nível <b>observado</b> na régua de Fazendinha (valores horários). A linha verde é a <b>previsão</b> harmônica com componentes anuais, a que apresentou menos erros nos testes (RMSE de 12,1 cm no bloco 03, contra 17,7 cm só com marés e 23,7 cm com as constantes do bloco 04). O gráfico de baixo mostra o <b>erro</b> (previsto − observado): acima de zero, a previsão ficou mais alta que a água. Escolha um período, <b>arraste sobre o gráfico</b> para ampliar e veja a tabela de erros do trecho visível.</p>
 
   <div class="card cmp-controls">
     <div><span class="label">Período</span><div class="chips" id="cmpPresets"></div></div>
@@ -299,7 +297,7 @@
       <div><label class="label" for="cmpTo">Até</label><input type="date" id="cmpTo"></div>
       <div><label class="label" for="cmpRef">Referência da altura</label><select id="cmpRef"><option value="nr">Acima do NR (66,7 cm)</option><option value="zero">Acima do zero da régua</option></select></div>
     </div>
-    <div class="cmp-models" id="cmpModels"></div>
+    
   </div>
 
   <div class="card">
@@ -312,7 +310,7 @@
   <div class="card"><h3>Erros no trecho visível</h3><p class="sub" id="cmpSub"></p><div class="tablewrap"><table id="cmpStats"></table></div></div>
 
   <div class="cmp-grid">
-    <div class="card"><h3>Previsto × observado</h3><div class="row-sel"><label class="label" for="cmpScatterModel">Modelo</label><select id="cmpScatterModel"></select></div><canvas id="cmpScatter" height="320"></canvas><p class="note">Cada ponto é uma hora. Quanto mais perto da diagonal, melhor a previsão.</p></div>
+    <div class="card"><h3>Previsto × observado</h3><canvas id="cmpScatter" height="320"></canvas><p class="note">Cada ponto é uma hora. Quanto mais perto da diagonal, melhor a previsão.</p></div>
     <div class="card"><h3>Distribuição do erro</h3><canvas id="cmpHist" height="320"></canvas><p class="note">Número de horas por faixa de erro (cm). Uma boa previsão forma um pico estreito em zero.</p></div>
   </div>
 
