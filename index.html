@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#173f35">
+<meta name="description" content="TideConversor v2: conversão de alturas, defasagens de horário, série histórica e previsão de maré entre Fazendinha e Porto de Santana.">
+<title>TideConversor v2</title>
+<link rel="icon" href="logo.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Ir para o conteúdo</a>
+<header>
+  <div class="top">
+    <div class="brand">
+      <img class="institution-logo" src="logo.png" alt="Logotipo UNIPILOT" width="34" height="37">
+      <div><strong>TideConversor <em>v2</em></strong><span>Fazendinha &amp; Santana</span></div>
+    </div>
+    <nav class="topnav" role="tablist" aria-label="Ferramentas">
+      <button role="tab" id="tab-converter" data-panel="converter" aria-selected="true" aria-controls="converter">Alturas</button>
+      <button role="tab" id="tab-lunar" data-panel="lunar" aria-selected="false" aria-controls="lunar">Horários</button>
+      <button role="tab" id="tab-history" data-panel="history" aria-selected="false" aria-controls="history">Histórico</button>
+      <button role="tab" id="tab-forecast" data-panel="forecast" aria-selected="false" aria-controls="forecast">Previsão</button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============ ALTURAS ============ -->
+<section id="converter" class="panel" role="tabpanel" aria-labelledby="tab-converter">
+  <div class="sectionhead">
+    <div><h2>Conversão de alturas</h2><p class="sub">Fazendinha ↔ Porto de Santana · calibração mensal de 2026</p></div>
+    <button class="textbutton" data-method="converter">Método</button>
+  </div>
+
+  <div class="converter-layout">
+    <div class="card">
+      <div class="seg" role="group" aria-label="Referência da entrada">
+        <button id="staffMode" aria-pressed="true">Leitura da régua</button>
+        <button id="tableMode" aria-pressed="false">Tábua de Santana</button>
+      </div>
+      <div class="fields">
+        <div>
+          <label class="label" id="valueLabel" for="value">Régua acima do zero</label>
+          <div class="inputbox">
+            <button class="step" id="valueDown" aria-label="Diminuir 5 centímetros" type="button">−</button>
+            <input id="value" inputmode="decimal" value="2,00" autocomplete="off" aria-describedby="basis">
+            <span>m</span>
+            <button class="step" id="valueUp" aria-label="Aumentar 5 centímetros" type="button">+</button>
+          </div>
+        </div>
+        <div>
+          <label class="label" for="month">Mês da leitura · 2026</label>
+          <select id="month"></select>
+        </div>
+      </div>
+      <div id="monthBadge" class="badge" hidden></div>
+
+      <div class="results" aria-live="polite" aria-atomic="true">
+        <div class="result">
+          <h3>Nível em Fazendinha<br>acima do NR</h3>
+          <div class="number" id="nr">—</div>
+          <div class="hint" id="nrNote"></div>
+        </div>
+        <div class="result water">
+          <h3 id="equivLabel"></h3>
+          <div class="number" id="equiv">—</div>
+          <div class="hint" id="equivNote"></div>
+        </div>
+      </div>
+      <div class="rangebar" id="rangebar" aria-hidden="true"></div>
+      <div class="actions">
+        <button class="textbutton" id="copyResult">Copiar resultado</button>
+        <button class="textbutton" id="swapMode">⇄ Inverter sentido</button>
+      </div>
+      <p class="calculation" id="calculation" aria-live="polite"></p>
+      <div class="warning" id="warning" role="status" hidden></div>
+      <p class="note" id="basis">NR = leitura da régua − 0,75 m. A equivalência usa o ajuste do mês selecionado.</p>
+    </div>
+
+    <div class="card">
+      <h3>Conversão em lote</h3>
+      <p class="sub">Cole várias alturas (uma por linha) no mesmo sentido e mês escolhidos ao lado.</p>
+      <label class="label" for="batch">Valores em metros</label>
+      <textarea id="batch" rows="5" placeholder="1,80&#10;2,35&#10;3,10" spellcheck="false"></textarea>
+      <div class="tablewrap" id="batchOut"></div>
+      <div class="actions"><button class="textbutton" id="batchCsv">Exportar CSV</button></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="chart-head"><div><h3>Reta de calibração do mês</h3><p class="sub" id="calibSub"></p></div></div>
+    <div class="plotwrap"><svg class="chart" id="calibChart" viewBox="0 0 920 300" role="img" aria-label="Reta de calibração da régua para a tábua"></svg></div>
+  </div>
+
+  <details id="calibDetails"><summary>Entenda a calibração</summary>
+    <p id="calibText"></p>
+    <div class="calibration" id="model"></div>
+    <div class="tablewrap"><table id="modelTable"><caption>Ajustes mensais · T = a + b·R</caption>
+      <thead><tr><th>Mês</th><th>a (m)</th><th>b</th><th>Pares</th><th>RMSE T (cm)</th><th>RMSE R (cm)</th><th>Faixa R (m)</th></tr></thead><tbody></tbody></table></div>
+    <p>R = régua acima do zero; H = nível de Fazendinha acima do NR; T = tábua de Santana. H = R − 0,75; T = a + bR; no sentido inverso R = (T − a)/b. A redução de 0,75 m foi informada pelo usuário e pressupõe o mesmo zero entre a régua física e o RLS, sem nivelamento independente. O RMSE vem da retirada de semanas inteiras (validação temporal interna em 2026), não de outro ano, e não é intervalo de confiança.</p>
+    <p>Alturas intermediárias não foram validadas separadamente. O conversor não prevê horários nem aplica defasagem temporal às alturas.</p>
+  </details>
+</section>
+
+<!-- ============ HORÁRIOS ============ -->
+<section id="lunar" class="panel" role="tabpanel" aria-labelledby="tab-lunar" hidden>
+  <div class="sectionhead">
+    <div><h2>Diferenças de horário</h2><p class="sub">Observações de Fazendinha − previsão da tábua de Santana · 2026</p></div>
+    <div class="section-actions"><button class="textbutton" id="exportCSV">Exportar CSV</button><button class="textbutton" data-method="lunar">Método</button></div>
+  </div>
+  <div class="card lunar-toolbar">
+    <div><label class="label" for="lunarMonth">Mês para explorar</label><select id="lunarMonth"></select></div>
+    <div><label class="label" for="window">Janela lunar</label>
+      <select id="window"><option value="1">±1 dia</option><option value="2" selected>±2 dias</option><option value="3">±3 dias</option></select></div>
+    <div><label class="label" for="support">Resolução</label>
+      <select id="support"><option value="dense">≤20 min · preferencial</option><option value="all">≤65 min · ampliado</option></select></div>
+  </div>
+  <div id="lunarBadge" class="badge" hidden></div>
+  <div class="subnav" role="group" aria-label="Visualização" id="lunarNav">
+    <button class="chip" data-view="lunarSummary" aria-pressed="true">Médias</button>
+    <button class="chip" data-view="lunarGraphView" aria-pressed="false">Gráfico</button>
+    <button class="chip" data-view="lunarTableView" aria-pressed="false">Tabela</button>
+  </div>
+
+  <div id="lunarSummary" class="subview">
+    <div class="phasegrid" id="phaseCards" aria-live="polite"></div>
+    <div class="sign-note"><span class="pill">− antes da previsão</span><span class="pill">+ depois da previsão</span><span class="pill">minutos</span><span class="pill">IC 95% da média</span></div>
+    <p class="note" id="phaseNote"></p>
+    <div class="calendar" id="calendar"></div>
+    <p class="note interpretation">A comparação é com a previsão de Santana. Não representa, isoladamente, a defasagem física entre duas estações observadas.</p>
+  </div>
+
+  <div id="lunarGraphView" class="card subview" hidden>
+    <div class="chart-head">
+      <div><h3>Médias mensais</h3><p class="sub">Observado − previsto, em minutos. Barras = IC 95% da média.</p></div>
+      <div class="chart-options" role="group" aria-label="Ciclo no gráfico">
+        <button class="chip" id="springChart" aria-pressed="true">Sizígia</button>
+        <button class="chip" id="neapChart" aria-pressed="false">Quadratura</button>
+      </div>
+    </div>
+    <div class="plotwrap"><svg class="chart" id="lagChart" viewBox="0 0 920 300" role="img" aria-label="Médias mensais da defasagem"></svg></div>
+    <div class="legend"><span><i class="dot"></i> Preamar</span><span><i class="dot bm"></i> Baixamar</span><span>Lacuna = menos de 3 pares; marcador vazado = menos de 10 pares.</span></div>
+  </div>
+
+  <div id="lunarTableView" class="card subview" hidden>
+    <div class="tablewrap"><table>
+      <caption>Média em minutos (n = pares) · mediana entre colchetes</caption>
+      <thead><tr><th>Mês</th><th>Sizígia<br>PM</th><th>Sizígia<br>BM</th><th>Quadratura<br>PM</th><th>Quadratura<br>BM</th></tr></thead>
+      <tbody id="summaryTable"></tbody></table></div>
+  </div>
+
+  <details><summary>Método e limitações</summary>
+    <p><b>Diferença temporal = horário do extremo observado em Fazendinha − horário previsto na tábua de Santana.</b> São médias dos pares, separadas por mês do evento oficial, tipo de extremo e ciclo; não são a diferença entre horários médios calculados separadamente. Subtrair o NR não altera a defasagem.</p>
+    <p>Sizígia: janela em torno de Lua nova ou cheia. Quadratura: em torno dos quartos. Eventos fora da janela não entram. Extremos detectados por segmento com proeminência de 0,50 m; pareamento um a um do mesmo tipo, distância máxima de 180 min. Suporte padrão ≤20 min e patamar ≤40 min; ampliado ≤65 min. 970 extremos antes dos filtros.</p>
+    <p>O IC 95% usa a distribuição t sobre os eventos e supõe independência entre eles; com eventos de dias consecutivos isso é otimista. DP descreve a dispersão dos eventos, não a incerteza da média. Os relógios foram mantidos conforme os arquivos, sem deslocamento inferido.</p>
+  </details>
+</section>
+
+<!-- ============ HISTÓRICO ============ -->
+<section id="history" class="panel" role="tabpanel" aria-labelledby="tab-history" hidden>
+  <div class="sectionhead">
+    <div><h2>Série histórica</h2><p class="sub">Nível médio em Fazendinha · out/2024 a jul/2026</p></div>
+    <div class="section-actions"><button class="textbutton" id="exportHistory">Exportar CSV</button><button class="textbutton" data-method="history">Método</button></div>
+  </div>
+  <div class="history-toolbar">
+    <div class="subnav" role="group" aria-label="Visualização" id="historyNav">
+      <button class="chip" data-view="historySummary" aria-pressed="true">Comparar</button>
+      <button class="chip" data-view="historyGraphView" aria-pressed="false">Gráfico</button>
+      <button class="chip" data-view="historyTableView" aria-pressed="false">Tabela</button>
+    </div>
+    <div class="history-reference" id="historyRef" hidden>
+      <label class="label" for="historyDatum">Referência</label>
+      <select id="historyDatum"><option value="nr">Acima do NR</option><option value="zero">Acima do zero da régua</option></select>
+    </div>
+  </div>
+
+  <div id="historySummary" class="subview">
+    <p class="note interpretation">Seca extrema de 2024 × 2025 como comparador. Diferenças observadas não isolam o efeito causal da seca.</p>
+    <div class="cards3" id="droughtCards"></div>
+    <h3 class="subhead">2026 × 2025 (mesmos meses completos)</h3>
+    <div class="cards3" id="yoyCards"></div>
+  </div>
+
+  <div id="historyGraphView" class="card subview" hidden>
+    <div class="chart-head">
+      <div><h3 id="historyTitle">Médias mensais</h3><p class="sub">Selecione um ponto para ver o valor. Marcador vazado = mês parcial.</p></div>
+      <div class="chart-options" role="group" aria-label="Escala">
+        <button class="chip" id="histMonthly" aria-pressed="true">Mensal</button>
+        <button class="chip" id="histDaily" aria-pressed="false">Diária</button>
+      </div>
+    </div>
+    <div class="yearchecks" id="yearChecks">
+      <label><input type="checkbox" data-year="2024" checked> <i style="background:var(--c2024)"></i> 2024</label>
+      <label><input type="checkbox" data-year="2025" checked> <i style="background:var(--c2025)"></i> 2025</label>
+      <label><input type="checkbox" data-year="2026" checked> <i style="background:var(--c2026)"></i> 2026</label>
+    </div>
+    <div class="plotwrap"><svg class="chart" id="historyChart" viewBox="0 0 920 320" role="img" aria-label="Série histórica de nível médio"></svg></div>
+    <p class="readout" id="historyReadout" aria-live="polite"></p>
+  </div>
+
+  <div id="historyTableView" class="card subview" hidden>
+    <div class="tablewrap"><table><caption id="historyCaption"></caption>
+      <thead><tr><th>Mês</th><th>2024</th><th>2025</th><th>2026</th></tr></thead><tbody id="historyTable"></tbody></table></div>
+  </div>
+
+  <details><summary>Dados históricos</summary>
+    <p>2024 aparece separado por ter ocorrido seca extrema regional; 2025 é um comparador, não normal climatológica. As médias diárias exigem ≥260 amostras e intervalo máximo no dia ≤60 min. Médias mensais dão peso igual a cada dia qualificado; meses parciais são identificados.</p>
+    <p>Comparação out–dez de 2024 × 2025 usa meses completos. Registros de novembro e dezembro de 2025 não foram calibrados pela tábua de 2026. Fonte: XLSX Atalaia e arquivos Report fornecidos pelo usuário; a coluna E tem preferência nos horários coincidentes, sem média entre fontes.</p>
+    <p>Contexto da seca: <a href="https://www.sgb.gov.br/sala-de-imprensa/-/asset_publisher/ujyx/content/monitoramento-hidrologico-permite-acompanhar-evolucao-da-estiagem-na-regiao-norte" target="_blank" rel="noopener">SGB/CPRM</a>.</p>
+  </details>
+</section>
+
+<!-- ============ PREVISÃO ============ -->
+<section id="forecast" class="panel" role="tabpanel" aria-labelledby="tab-forecast" hidden>
+  <div class="sectionhead">
+    <div><h2>Previsão de nível</h2><p class="sub">Tábua de Santana 2026 · interpolação cossenoidal</p></div>
+    <div class="section-actions"><button class="textbutton" id="exportForecast">Exportar CSV</button><button class="textbutton" data-method="forecast">Método</button></div>
+  </div>
+
+  <div class="card forecast-controls">
+    <div><label class="label" for="forecastLocation">Local</label>
+      <select id="forecastLocation"><option value="faz">Fazendinha (NR)</option><option value="san">Porto de Santana (tábua)</option></select></div>
+    <div><label class="label" for="forecastDate">Data</label>
+      <div class="inputbox"><button class="step" id="dayPrev" type="button" aria-label="Dia anterior">‹</button><input type="date" id="forecastDate" min="2026-01-01" max="2026-12-31"><button class="step" id="dayNext" type="button" aria-label="Próximo dia">›</button></div></div>
+    <div><label class="label" for="forecastTime">Hora (UTC−03)</label>
+      <div class="inputbox"><input type="time" id="forecastTime"><button class="step wide" id="nowBtn" type="button">Agora</button></div></div>
+    <div><label class="label" for="forecastDepth">Profundidade ao NR (m, opcional)</label>
+      <div class="inputbox"><input id="forecastDepth" inputmode="decimal" placeholder="ex.: 6,50" autocomplete="off"><span>m</span></div></div>
+  </div>
+  <label class="check"><input type="checkbox" id="lagToggle"> Aplicar defasagem média de horário observada em Fazendinha (experimental, não validada)</label>
+
+  <div class="warning" id="forecastWarning" role="status" hidden></div>
+
+  <div class="results forecast-results" aria-live="polite">
+    <div class="result"><h3 id="forecastLocalLabel">Nível</h3><div class="number" id="forecastLevel">—</div><div class="hint">Nível acima do NR</div></div>
+    <div class="result water"><h3>Coluna d’água</h3><div class="number" id="forecastColumn">—</div><div class="hint" id="forecastEquation"></div></div>
+    <div class="result next"><h3>Próximo extremo</h3><div class="number" id="nextEvent">—</div><div class="hint" id="nextEventNote"></div></div>
+  </div>
+
+  <div class="subnav" role="group" aria-label="Visualização">
+    <button class="chip" data-fview="curve" aria-pressed="true">Curva do dia</button>
+    <button class="chip" data-fview="events" aria-pressed="false">Preamares e baixamares</button>
+    <button class="chip" data-fview="week" aria-pressed="false">7 dias</button>
+  </div>
+  <div id="forecastCurveView" class="card"><div class="plotwrap"><svg class="chart" id="forecastChart" viewBox="0 0 920 250" role="img" aria-label="Curva de maré do dia"></svg></div><p class="note">Clique ou toque na curva para escolher o horário.</p></div>
+  <div id="forecastEventsView" class="card" hidden><div class="tablewrap"><table><thead><tr><th>Tipo</th><th>Hora</th><th id="forecastTableLevel">NR (m)</th><th>Coluna (m)</th></tr></thead><tbody id="forecastEventRows"></tbody></table></div></div>
+  <div id="forecastWeekView" class="card" hidden><div class="plotwrap"><svg class="chart" id="weekChart" viewBox="0 0 920 260" role="img" aria-label="Previsão de sete dias"></svg></div></div>
+
+  <details><summary>Método da previsão</summary>
+    <p>A aba usa os 1.411 extremos da tábua de Santana de 2026. Entre extremos consecutivos usa interpolação cossenoidal, T = T0 + (T1 − T0)·[1 − cos(π·u)]/2, que passa pelos extremos mas não é previsão harmônica oficial. Não se extrapola além da série.</p>
+    <p>Em Fazendinha, H = (T − a)/b − 0,75 com o ajuste do mês. Sem a opção de defasagem, os horários PM/BM são os de Santana. Com a opção, os extremos são deslocados pela defasagem média do mês e tipo (eventos de resolução preferencial; meses com menos de 10 pares usam a média de janeiro–julho). Essa correção não tem validação independente.</p>
+    <p>A coluna d’água só é calculada com profundidade local informada, referida ao mesmo NR: coluna = profundidade + nível. Ao trocar de local a profundidade é apagada. Para novembro e dezembro não há calibração: o app usa a de outubro e avisa que é extrapolação.</p>
+  </details>
+</section>
+</main>
+
+<footer>
+  <p>Desenvolvido pelo Setor de Hidrografia da UNIPILOT · Dados de calibração de 2026 · Não substitui a Tábua de Marés oficial da DHN nem serve à navegação.</p>
+  <p><button class="textbutton" id="installOffline" hidden>Instalar</button> <a href="README.md">Documentação</a> · <a href="ANALISE.md">Reanálise dos dados</a></p>
+</footer>
+
+<dialog id="methodDialog" aria-labelledby="methodTitle">
+  <div class="dialog-head"><h3 id="methodTitle"></h3><button class="textbutton" id="closeMethod" aria-label="Fechar">Fechar</button></div>
+  <div id="methodBody"></div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="data/data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

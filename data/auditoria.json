@@ -1,0 +1,15 @@
+{
+  "file": "atalaia_loggrp_20260728_20260803.xlsx",
+  "sha256": "05f5030c2b6248f8fe214a92ac1d941a3aa3bb48aec062d91fc73332e8b27be1",
+  "first": "2024-09-30 16:20:00",
+  "last": "2026-07-14 06:30:00",
+  "rows": 186510,
+  "valid_E": 186506,
+  "isolated_peaks": 1,
+  "overlap": 55254,
+  "overlap_identical": 19472,
+  "overlap_RMSE_cm": 11.629722413145217,
+  "blend_rows": 66420,
+  "calibration_rows": 66419,
+  "source_note": "Coluna E identificada como altura acima do zero pelos graficos do XLSX; coluna F=E-0.75. Coluna D nao usada. Preferencia ao XLSX nos horarios sobrepostos, sem media entre fontes nem deslocamento de relogio. Pico isolado retirado apenas da analise. Medias diarias qualificadas: >=260 registros e intervalo maximo no dia <=60min."
+}
