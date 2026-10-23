@@ -4,7 +4,8 @@
 (function () {
   const $ = id => document.getElementById(id), A = window.TCApp, TCH = window.TCH;
   const T = TCH.OBS_T, V = TCH.OBS_V, NR = TCH.NR, N = T.length, DAY = 864e5, H3 = 36e5, EPOCH = Date.UTC(2024, 0, 1);
-  const GREEN = '#1b9664', ORANGE = '#eb6834', BLUE = '#3a7bd5', GRAY = '#9aa39c', AMBER = '#d9a441';
+  let ORANGE = '#D55E00', BLUE = '#0072B2'; const GREEN = '#009E73', GRAY = '#8a9590', AMBER = '#E69F00';   // paleta Okabe–Ito (legível por daltônicos)
+  const FONT = '12px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif', PL = 'italic 700 14px Charter, "Iowan Old Style", Georgia, serif', AL = 58;
   const Y_MAIN = [-0.2, 4.0], Y_ERR = 60, Y_OV = [0.4, 2.8];   // escalas fixas
   const loc = ms => new Date(ms - 3 * H3), pad = n => String(n).padStart(2, '0');
   const WD = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'], MN = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -49,7 +50,7 @@
     $('cmpCsv').onclick = () => exportCsv(false); $('cmpCsvAll').onclick = () => exportCsv(true);
     $('cmpAll').onclick = () => { showAll = !showAll; render(); };
     const pick = (cv, e, W) => { const r = cv.getBoundingClientRect(), x = e.clientX - r.left; return W(x); };
-    $('cmpOv').onpointerdown = e => { const r = $('cmpOv').getBoundingClientRect(), L = 40, R = 8, t = first + (e.clientX - r.left - L) / (r.width - L - R) * (last + DAY - first); len = len; go(t - len * DAY / 2, null); };
+    $('cmpOv').onpointerdown = e => { const r = $('cmpOv').getBoundingClientRect(), L = AL, R = 8, t = first + (e.clientX - r.left - L) / (r.width - L - R) * (last + DAY - first); len = len; go(t - len * DAY / 2, null); };
     $('cmpMonths').onclick = e => { const r = $('cmpMonths').getBoundingClientRect(), i = Math.floor((e.clientX - r.left - mx.L) / mx.bw); if (month && i >= 0 && i < month.list.length) { len = 30; go(month.list[i].t0, null); } };
     const wrap = $('cmpWrap');
     wrap.addEventListener('pointermove', hover); wrap.addEventListener('pointerleave', () => { $('cmpCursor').hidden = true; $('cmpTip').hidden = true; });
@@ -68,6 +69,8 @@
 
   function render() {
     const t0 = start, t1 = start + len * DAY, ev = events(t0, t1), s = stats(ev), i0 = lb(t0), i1 = lb(t1);
+    { const m = (getComputedStyle(document.body).backgroundColor.match(/\d+/g) || [255, 255, 255]).map(Number), dark = (m[0] + m[1] + m[2]) / 3 < 110;   // fundo escuro: tons mais claros da mesma paleta
+      ORANGE = dark ? '#F28E4B' : '#D55E00'; BLUE = dark ? '#56B4E9' : '#0072B2'; $('compare').style.setProperty('--c-pm', ORANGE); $('compare').style.setProperty('--c-bm', BLUE); }
     $('cmpDate').value = iso(t0); $('cmpDate').min = iso(first); $('cmpDate').max = iso(last);
     document.querySelectorAll('#cmpPresets [data-p]').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === active));
     document.querySelectorAll('#cmpLen [data-d]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.d === len));
@@ -104,9 +107,16 @@
     x.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]); x.stroke();
   }
   const dot = (x, px, py, r, fill, stroke, tri) => { x.beginPath(); if (tri) { x.moveTo(px, py - r * 1.2); x.lineTo(px + r * 1.1, py + r * .8); x.lineTo(px - r * 1.1, py + r * .8); x.closePath(); } else x.arc(px, py, r, 0, 7); if (fill) { x.fillStyle = fill; x.fill(); } if (stroke) { x.strokeStyle = stroke; x.lineWidth = 1.6; x.stroke(); } };
+  /** moldura de figura científica: eixos, marcas externas, título do eixo y e letra do painel */
+  function frame(x, L, Tp, pw, ph, ytitle, letter) {
+    const ink = INK(); x.save(); x.strokeStyle = ink; x.lineWidth = 1; x.globalAlpha = .85; x.strokeRect(L + .5, Tp + .5, pw, ph); x.restore();
+    if (ytitle) { x.save(); x.translate(13, Tp + ph / 2); x.rotate(-Math.PI / 2); x.textAlign = 'center'; x.fillStyle = col('--chart-text'); x.font = FONT; x.fillText(ytitle, 0, 0); x.restore(); }
+    if (letter) { x.fillStyle = ink; x.font = PL; x.textAlign = 'left'; x.fillText(letter, L + 8, Tp + 17); }
+  }
+  const ytick = (x, L, y, label) => { x.beginPath(); x.moveTo(L - 4, y); x.lineTo(L, y); x.strokeStyle = INK(); x.lineWidth = 1; x.stroke(); x.fillStyle = col('--chart-text'); x.textAlign = 'right'; x.font = FONT; x.fillText(label, L - 7, y + 4); };
   function xticks(t0, t1, x, X, ph, Tp, h, pw) {
     const dayW = pw / len, step = Math.max(1, Math.ceil(56 / dayW)), grid = col('--chart-grid'), txt = col('--chart-text'), wd = dayW * step >= 64;
-    x.textAlign = 'center'; x.fillStyle = txt; x.strokeStyle = grid; x.font = '11px system-ui'; x.lineWidth = 1;
+    x.textAlign = 'center'; x.fillStyle = txt; x.strokeStyle = grid; x.font = FONT; x.lineWidth = 1;
     for (let k = 0, t = t0; t < t1; k++, t += DAY) {
       x.beginPath(); x.moveTo(X(t), Tp); x.lineTo(X(t), Tp + ph); x.stroke();
       if (h && k % step === 0) x.fillText((wd ? WD[loc(t).getUTCDay()] + ' ' : '') + dm(t), X(t + DAY / 2), h - 6);
@@ -120,29 +130,29 @@
     return (daily = [...map.values()].filter(a => a.n >= 18).map(a => ({ t: a.t, o: m_(a.o / a.n), p: m_(a.p / a.n) })));
   }
   function drawOverview(t0, t1) {
-    const { x, w, h } = setup($('cmpOv')), L = 40, R = 8, Tp = 8, B = 20, pw = w - L - R, ph = h - Tp - B, ta = first, tb = last + DAY, d = dailyData();
+    const { x, w, h } = setup($('cmpOv')), L = AL, R = 8, Tp = 8, B = 22, pw = w - L - R, ph = h - Tp - B, ta = first, tb = last + DAY, d = dailyData();
     const X = t => L + (t - ta) / (tb - ta) * pw, Y = v => Tp + ph - (v - Y_OV[0]) / (Y_OV[1] - Y_OV[0]) * ph, grid = col('--chart-grid'), txt = col('--chart-text');
-    x.font = '11px system-ui'; x.lineWidth = 1; x.strokeStyle = grid; x.fillStyle = txt; x.textAlign = 'right';
-    for (const v of [0.5, 1, 1.5, 2, 2.5]) { x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); x.fillText(fmt(v, 1) + ' m', L - 5, Y(v) + 4); }
+    x.font = FONT; x.lineWidth = 1; x.strokeStyle = grid; x.fillStyle = txt; x.textAlign = 'right';
+    for (const v of [0.5, 1, 1.5, 2, 2.5]) { x.strokeStyle = grid; x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); ytick(x, L, Y(v), fmt(v, 1)); }
     x.fillStyle = 'rgba(150,160,150,.18)'; for (const [a, b] of FIT) x.fillRect(X(a), Tp, X(b) - X(a), ph);
     x.fillStyle = txt; x.textAlign = 'center'; let lm = -1;
     for (let t = first; t < tb; t += DAY) { const dd = loc(t); if (dd.getUTCDate() === 1) { const mo = dd.getUTCFullYear() * 12 + dd.getUTCMonth(); x.strokeStyle = grid; x.beginPath(); x.moveTo(X(t), Tp); x.lineTo(X(t), Tp + ph); x.stroke(); if (mo !== lm && dd.getUTCMonth() % (pw > 760 ? 2 : 3) === 0) x.fillText(MN[dd.getUTCMonth()] + '/' + String(dd.getUTCFullYear()).slice(2), X(t), h - 5); lm = mo; } }
-    x.fillStyle = txt; x.textAlign = 'left'; x.fillText('ajuste (bloco 02)', X(FIT[0][0]) + 4, Tp + 11);
+    x.fillStyle = txt; x.textAlign = 'left'; x.font = FONT; x.fillText('ajuste (bloco 02)', X(FIT[0][0]) + 4, Tp + 13);
     const line = (key, c, wd) => { x.strokeStyle = c; x.lineWidth = wd; x.beginPath(); let pt = null; for (const a of d) { if (pt !== null && a.t - pt <= 2 * DAY) x.lineTo(X(a.t + DAY / 2), Y(a[key])); else x.moveTo(X(a.t + DAY / 2), Y(a[key])); pt = a.t; } x.stroke(); };
-    line('p', GREEN, 1.8); line('o', INK(), 1.3);
+    line('p', GREEN, 1.9); line('o', INK(), 1.3); frame(x, L, Tp, pw, ph, 'Nível médio diário (m)', null);
     x.fillStyle = 'rgba(165,108,52,.16)'; x.strokeStyle = '#a56c34'; x.lineWidth = 1.5; const wx = X(t0), ww = Math.max(3, X(t1) - X(t0)); x.fillRect(wx, Tp, ww, ph); x.strokeRect(wx, Tp, ww, ph);
   }
 
   /* ---------- gráfico principal: curvas + pontos das preamares e baixamares ---------- */
   function drawMain(i0, i1, t0, t1, ev) {
-    const { x, w, h } = setup($('cmpMain')), L = 48, R = 8, Tp = 8, B = 22, pw = w - L - R, ph = h - Tp - B;
+    const { x, w, h } = setup($('cmpMain')), L = AL, R = 8, Tp = 8, B = 24, pw = w - L - R, ph = h - Tp - B;
     const X = t => L + (t - t0) / (t1 - t0) * pw, Y = v => Tp + ph - (v - Y_MAIN[0]) / (Y_MAIN[1] - Y_MAIN[0]) * ph;
     const grid = col('--chart-grid'), txt = col('--chart-text'), ink = INK();
     x.lineWidth = 1; xticks(t0, t1, x, X, ph, Tp, h, pw);
     x.textAlign = 'right'; x.fillStyle = txt; x.strokeStyle = grid;
-    for (let v = 0; v <= 4; v++) { x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); x.fillText(v + ' m', L - 6, Y(v) + 4); }
+    for (let v = 0; v <= 4; v++) { x.strokeStyle = grid; x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); ytick(x, L, Y(v), String(v)); }
     x.setLineDash([5, 4]); x.strokeStyle = txt; x.beginPath(); x.moveTo(L, Y(0)); x.lineTo(w - R, Y(0)); x.stroke(); x.setLineDash([]);
-    x.textAlign = 'left'; x.fillText('NR', L + 4, Y(0) - 4);
+    x.font = FONT; x.textAlign = 'left'; x.fillStyle = txt; x.fillText('NR', L + 5, Y(0) - 5);
     // faixas sem registro
     x.fillStyle = 'rgba(150,160,150,.16)'; let ps = t0;
     for (let i = Math.max(i0 - 1, 0); i <= Math.min(i1, N - 1); i++) { if (i > 0 && T[i] - T[i - 1] > 90 * 6e4) { const a = Math.max(T[i - 1], t0), b = Math.min(T[i], t1); if (b > a) x.fillRect(X(a), Tp, X(b) - X(a), ph); } }
@@ -155,22 +165,24 @@
     // pontos das preamares e baixamares
     for (const e of ev) { const ob = Y(m_(e.obs + NR)), pr = Y(m_(e.prev + NR)); x.strokeStyle = 'rgba(120,120,120,.45)'; x.lineWidth = 1; x.beginPath(); x.moveTo(X(e.t), ob); x.lineTo(X(e.t + e.dt * 6e4), pr); x.stroke(); }
     for (const e of ev) { dot(x, X(e.t), Y(m_(e.obs + NR)), 3.6, ink, null); dot(x, X(e.t + e.dt * 6e4), Y(m_(e.prev + NR)), 3.8, col('--card') || '#fff', GREEN); }
+    frame(x, L, Tp, pw, ph, 'Altura sobre o NR (m)', '(a)');
     G = { L, R, pw, w, t0, t1, i0, i1, ev };
   }
 
   /* ---------- erro de altura: pontos e curvas ---------- */
   function drawErr(t0, t1, ev) {
-    const { x, w, h } = setup($('cmpErr')), L = 48, R = 8, Tp = 8, B = 8, pw = w - L - R, ph = h - Tp - B;
+    const { x, w, h } = setup($('cmpErr')), L = AL, R = 8, Tp = 8, B = 8, pw = w - L - R, ph = h - Tp - B;
     const X = t => L + (t - t0) / (t1 - t0) * pw, Y = v => Tp + ph / 2 - v / Y_ERR * ph / 2, grid = col('--chart-grid'), txt = col('--chart-text');
-    x.font = '11px system-ui'; x.strokeStyle = grid; x.fillStyle = txt; x.textAlign = 'right'; x.lineWidth = 1;
-    for (const v of [-60, -30, 0, 30, 60]) { x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); x.fillText((v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' cm', L - 6, Y(v) + 4); }
+    x.font = FONT; x.strokeStyle = grid; x.fillStyle = txt; x.textAlign = 'right'; x.lineWidth = 1;
+    for (const v of [-60, -30, 0, 30, 60]) { x.strokeStyle = grid; x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); ytick(x, L, Y(v), (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v)); }
     for (let t = t0; t < t1; t += DAY) { x.beginPath(); x.moveTo(X(t), Tp); x.lineTo(X(t), Tp + ph); x.stroke(); }
     x.strokeStyle = txt; x.beginPath(); x.moveTo(L, Y(0)); x.lineTo(w - R, Y(0)); x.stroke();
     for (const bm of [false, true]) {
       const c = bm ? BLUE : ORANGE, list = ev.filter(e => e.bm === bm), pts = list.map(e => [X(e.t), Y(Math.max(-Y_ERR, Math.min(Y_ERR, e.prev - e.obs)))]);
       x.strokeStyle = c; x.lineWidth = 1.5; x.globalAlpha = .75; smooth(x, pts); x.globalAlpha = 1;
-      list.forEach((e, i) => { const out = Math.abs(e.prev - e.obs) > Y_ERR; dot(x, pts[i][0], pts[i][1], 3.6, out ? null : c, out ? c : null, bm); });
+      list.forEach((e, i) => { const out = Math.abs(e.prev - e.obs) > Y_ERR; dot(x, pts[i][0], pts[i][1], 3.8, out ? null : c, out ? c : null, bm); });
     }
+    frame(x, L, Tp, pw, ph, 'Erro de altura (cm)', '(b)');
   }
   /* cursor e dica: elementos HTML, sem redesenhar os gráficos */
   function hover(e) {
@@ -201,7 +213,7 @@
       list.map(e => { const ph = hm(e.t + e.dt * 6e4), da = e.prev - e.obs; return `<tr><td>${e.type}</td><td>${day(e)}</td><td class="${Math.abs(e.dt) > 25 ? 'bad' : ''}">${ph} (${e.dt === 0 ? 'igual' : sgn(e.dt) + ' min'})</td><td>${fmt(e.obs / 100, 2)} m</td><td>${fmt(e.prev / 100, 2)} m</td><td class="${Math.abs(da) <= 10 ? 'good' : Math.abs(da) > 25 ? 'bad' : ''}">${sgn(da)} cm</td></tr>`; }).join('') + '</tbody>';
   }
   /* ---------- erro mês a mês: pontos e curva ---------- */
-  const mx = { L: 46, bw: 1 };
+  const mx = { L: AL, bw: 1 };
   function monthsData() {
     if (month) return month; const acc = new Map();
     for (const v of EV) { const d = loc(v.t), k = d.getUTCFullYear() * 12 + d.getUTCMonth(), e = v.prev - v.obs; let a = acc.get(k); if (!a) acc.set(k, a = { y: d.getUTCFullYear(), m: d.getUTCMonth(), n: 0, sq: 0, fit: 0, t0: Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) + 3 * H3 }); a.n++; a.sq += e * e; if (inFit(v.t)) a.fit++; }
@@ -210,14 +222,15 @@
   }
   function drawMonths() {
     const { x, w, h } = setup($('cmpMonths')), list = monthsData().list, L = mx.L, R = 10, Tp = 16, B = 22, pw = w - L - R, ph = h - Tp - B, bw = pw / list.length, Y = v => Tp + ph - v / 60 * ph;
-    mx.bw = bw; const grid = col('--chart-grid'), txt = col('--chart-text'), cur = loc(start); x.font = '11px system-ui'; x.strokeStyle = grid; x.fillStyle = txt; x.textAlign = 'right'; x.lineWidth = 1;
-    for (const v of [0, 20, 40, 60]) { x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); x.fillText(v + ' cm', L - 5, Y(v) + 4); }
+    mx.bw = bw; const grid = col('--chart-grid'), txt = col('--chart-text'), cur = loc(start); x.font = FONT; x.strokeStyle = grid; x.fillStyle = txt; x.textAlign = 'right'; x.lineWidth = 1;
+    for (const v of [0, 20, 40, 60]) { x.strokeStyle = grid; x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); ytick(x, L, Y(v), String(v)); }
+    frame(x, L, Tp, pw, ph, 'Erro típico (cm)', null);
     const pts = list.map((a, i) => [L + (i + .5) * bw, Y(Math.min(a.rmse, 60))]);
     x.strokeStyle = txt; x.lineWidth = 1.6; x.globalAlpha = .7; smooth(x, pts); x.globalAlpha = 1;
     list.forEach((a, i) => {
       const c = a.kind === 'test' ? GREEN : a.kind === 'fit' ? GRAY : AMBER, sel = a.y === cur.getUTCFullYear() && a.m === cur.getUTCMonth();
       dot(x, pts[i][0], pts[i][1], sel ? 6 : 4.6, c, sel ? INK() : null);
-      x.fillStyle = txt; x.textAlign = 'center'; x.fillText(fmt(a.rmse), pts[i][0], pts[i][1] - 9);
+      x.fillStyle = txt; x.font = FONT; x.textAlign = 'center'; x.fillText(fmt(a.rmse), pts[i][0], pts[i][1] - 9);
       x.fillText(MN[a.m] + (a.m === 0 || i === 0 ? '/' + String(a.y).slice(2) : ''), pts[i][0], h - 6);
     });
   }

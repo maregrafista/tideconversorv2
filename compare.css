@@ -48,9 +48,11 @@
 #compare .cmp-cards3{grid-template-columns:repeat(3,1fr);margin:14px 0 0}
 @media (max-width:760px){#compare .cmp-cards3{grid-template-columns:1fr}}
 #compare .cmp-evhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}#compare .cmp-evhead h3{margin:0}
-#compare .cmp-legend i.dot{border-radius:50%;width:10px;height:10px}#compare .cmp-legend i.ring{background:transparent;border:2px solid #1b9664}
+#compare .cmp-legend i.dot{border-radius:50%;width:10px;height:10px}#compare .cmp-legend i.ring{background:transparent;border:2px solid #009E73}
 #compare .cmp-legend i.tri{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid currentColor;border-radius:0;background:none}
 #compare .cmp-legend i.gap{background:rgba(150,160,150,.3)}
 #compare #cmpOv{cursor:pointer}
 #carta .carta-chart th,#carta .carta-chart td{text-align:center}#carta .carta-chart td:first-child,#carta .carta-chart th:first-child{text-align:left}
 #carta .carta-chart tr.faz td{font-weight:700;background:var(--sage,#eef)}#carta .carta-chart tr.oficial td{color:var(--muted)}
+
+:root{--c-pm:#D55E00;--c-bm:#0072B2}

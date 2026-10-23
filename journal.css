@@ -1,0 +1,56 @@
+/* Acabamento editorial, no estilo de periódico científico (compartilhado pela v1 e pela v2) */
+:root{--serif:Charter,"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif}
+h1,h2,h3,.subhead,.brand strong{font-family:var(--serif)}
+h2{font-weight:600;letter-spacing:-.015em}
+.sectionhead{border-bottom:1.5px solid var(--ink,#222);padding-bottom:12px}
+.sub{font-family:var(--serif);font-style:italic}
+.card{border-radius:3px;box-shadow:none}
+.chip,.step,.cmp-nav input,select,.inputbox,.seg,.seg button{border-radius:3px}
+.chip[aria-pressed=true]{font-weight:600}
+/* abas como índice de revista */
+.topnav{gap:2px}
+.topnav button,.topnav button[aria-selected=true]{background:transparent!important;border-radius:0!important;padding:10px 14px!important;color:var(--muted)!important;box-shadow:inset 0 -2px 0 transparent}
+.topnav button[aria-selected=true]{color:var(--ink)!important;font-weight:650;box-shadow:inset 0 -2.5px 0 var(--forest,#173f35)}
+.topnav button:hover{color:var(--ink)!important}
+/* tabelas "booktabs": só régua superior, sob o cabeçalho e inferior */
+.panel table{border-collapse:collapse;font-variant-numeric:tabular-nums lining-nums}
+.panel thead th{border-top:1.5px solid var(--ink,#222);border-bottom:1px solid var(--ink,#222);background:transparent;font-weight:600}
+.panel tbody td{border-bottom:1px solid var(--line)}
+.panel tbody tr:last-child td{border-bottom:1.5px solid var(--ink,#222)}
+.panel tbody th{font-weight:600}
+/* legendas de figuras e tabelas */
+figure{margin:0}
+.fig-cap,.cmp-tabhead,.carta-note{font:13px/1.5 var(--serif);color:var(--ink,#222);margin:10px 0 0}
+.fig-cap b,.cmp-tabhead b{font-variant:small-caps;letter-spacing:.04em;font-weight:700}
+.cmp-tabhead{margin:22px 0 8px}
+.cmp-legend{font-family:ui-sans-serif,system-ui,sans-serif}
+/* Previsto × observado */
+#compare .intro{background:transparent;border:0;border-left:3px solid var(--forest,#173f35);border-radius:0;padding:2px 0 2px 14px;font:15.5px/1.6 var(--serif)}
+#compare .cmp-cards{gap:0;border-top:1.5px solid var(--ink,#222);border-bottom:1.5px solid var(--ink,#222);margin-bottom:6px}
+#compare .cmp-card{border:0;border-radius:0;background:transparent;padding:12px 16px;border-left:1px solid var(--line)}
+#compare .cmp-card:first-child{border-left:0;padding-left:4px}
+#compare .cmp-card .k{font-size:11px;letter-spacing:.08em}
+#compare .cmp-card .v{font:600 32px var(--serif);letter-spacing:-.02em}
+#compare .cmp-verdict{font:17px/1.55 var(--serif);margin:16px 0}
+#compare .cmp-tag{border-radius:3px}
+#compare .cmp-tip{border-radius:3px;font-family:ui-sans-serif,system-ui,sans-serif}
+#compare .fig{padding:16px 18px 12px}
+/* Quadro de informações da maré */
+#carta .carta-box{border:2px solid var(--ink,#222);outline:1px solid var(--ink,#222);outline-offset:4px;border-radius:0;padding:22px 26px;margin:6px 6px 22px;background:var(--card)}
+#carta .carta-head{border-bottom:1.5px solid var(--ink,#222);padding-bottom:12px;margin-bottom:6px}
+#carta .carta-head span{font:600 12.5px ui-sans-serif,system-ui,sans-serif;letter-spacing:.32em;color:var(--ink)}
+#carta .carta-head b{font:700 28px var(--serif);letter-spacing:.02em;margin:4px 0}
+#carta .carta-head i{font:italic 14px var(--serif);color:var(--muted)}
+#carta h3{font:600 15px var(--serif);letter-spacing:0;text-transform:none;color:var(--ink);margin:22px 0 8px}
+#carta .carta-tab{font-size:14.5px}
+#carta .carta-tab th{font:600 11.5px ui-sans-serif,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:transparent}
+#carta .carta-tab th,#carta .carta-tab td{border-left:0;border-right:0;padding:8px 10px}
+#carta .carta-chart{font-size:16px}#carta .carta-chart th[colspan]{border-bottom:1px solid var(--ink)}
+#carta .carta-chart tr.faz td{background:transparent;font-weight:700;font-size:17px}
+#carta .carta-chart td{padding:10px 10px}
+#carta .carta-grid{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:26px}#carta table,#carta th,#carta td{white-space:normal}#carta .carta-chart th,#carta .carta-chart td{white-space:nowrap}#carta .carta-grid>*{min-width:0}
+#carta .carta-fig{margin-top:6px}
+#carta #cartaSvg{max-width:none;width:100%}
+#carta tr.ref td{border-top:1.5px solid var(--ink)}
+@media (max-width:760px){#carta .carta-grid{grid-template-columns:minmax(0,1fr)}#compare .cmp-card{border-left:0;border-top:1px solid var(--line)}#compare .cmp-card:first-child{border-top:0}#carta .carta-box{padding:16px 14px}#carta .carta-head b{font-size:23px}#carta .carta-chart{font-size:13.5px}#carta .carta-chart tr.faz td{font-size:14px}}
+@media print{.topnav,header,footer{display:none}}

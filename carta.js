@@ -45,19 +45,22 @@
     ['Incerteza do horário (95 %)', `± ${Math.round(p95(teste.map(e => e.dt)))} min nas preamares e baixamares, em dados fora do ajuste`],
     ['Variação do nível médio', 'o rio desloca o nível médio ao longo do ano; Sa (21,6 cm) e Ssa (8,3 cm) já estão incluídas, mas anos secos ou cheios diferem']];
   $('cartaQual').innerHTML = qual.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
-  // esquema dos níveis
-  const lv = [['MHWS', q.MHWS], ['MHWN', q.MHWN], ['MSL', q.Zo], ['MLWN', q.MLWN], ['MLWS', q.MLWS], ['NR', 0]];
-  const top = 20, bot = 380, hi = Math.max(q.MHWS) / 100 + .2, lo = -.25, Y = v => top + (hi - v / 100) / (hi - lo) * (bot - top);
-  let s = `<rect x="150" y="${Y(q.MHWS)}" width="90" height="${Y(0) - Y(q.MHWS)}" fill="var(--sage,#e6ece1)" stroke="var(--line,#ccc)"/>`;
-  s += `<rect x="150" y="${Y(q.MLWS)}" width="90" height="${Y(0) - Y(q.MLWS)}" fill="none"/>`;
-  s += `<text x="195" y="${(Y(q.MHWS) + Y(q.MLWS)) / 2 + 4}" text-anchor="middle" font-size="12" fill="var(--muted,#667)">faixa da maré</text>`;
-  for (const [n, v] of lv) {
-    const y = Y(v), ref = n === 'NR', col = ref ? '#a56c34' : 'var(--forest,#173f35)';
-    s += `<line x1="${ref ? 104 : 150}" x2="${ref ? 300 : 240}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="${ref ? 1.6 : 1.4}" />` +
-      `<text x="${ref ? 98 : 144}" y="${y + 4}" text-anchor="end" font-size="13" font-weight="600" fill="${col}">${n}</text>` +
-      `<text x="${ref ? 306 : 246}" y="${y + 4}" font-size="13" fill="var(--ink,#222)">${m(v)} m</text>`;
+  // esquema dos níveis (figura de revista): eixo em metros, faixas de sizígia e quadratura, níveis rotulados
+  const W = 640, Ht = 500, AX = 92, XR = 300, TOP = 30, BOT = 430, hi = q.MHWS / 100 + .35, lo = -.3, Y = v => TOP + (hi - v / 100) / (hi - lo) * (BOT - TOP);
+  const fnt = 'ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif', ink = 'var(--ink,#222)', mut = 'var(--muted,#667)', ln = 'var(--line,#ccc)', wat = 'var(--water,#2f7283)', och = 'var(--ochre,#9d6c2b)';
+  let s = `<g font-family='${fnt}'>`;
+  for (let v = 0; v <= 3.01; v += .5) { const y = Y(v * 100); s += `<line x1="${AX}" x2="${XR}" y1="${y}" y2="${y}" stroke="${ln}" stroke-width="1"/><line x1="${AX - 6}" x2="${AX}" y1="${y}" y2="${y}" stroke="${ink}" stroke-width="1.2"/><text x="${AX - 11}" y="${y + 5}" text-anchor="end" font-size="18" fill="${mut}">${f(v, 1)}</text>`; }
+  s += `<line x1="${AX}" x2="${AX}" y1="${TOP}" y2="${BOT}" stroke="${ink}" stroke-width="1.4"/><text transform="translate(22 ${(TOP + BOT) / 2}) rotate(-90)" text-anchor="middle" font-size="18" fill="${mut}">Altura acima do NR (m)</text>`;
+  s += `<rect x="130" y="${Y(q.MHWS)}" width="130" height="${Y(q.MLWS) - Y(q.MHWS)}" style="fill:${wat};opacity:.14"/><rect x="152" y="${Y(q.MHWN)}" width="86" height="${Y(q.MLWN) - Y(q.MHWN)}" style="fill:${wat};opacity:.28"/>`;
+  const lv = [['MHWS', q.MHWS, 1.8], ['MHWN', q.MHWN, 1.8], ['MSL', q.Zo, 1.8, '7 4'], ['MLWN', q.MLWN, 1.8], ['MLWS', q.MLWS, 1.8], ['NR', 0, 3]];
+  for (const [n, v, wd, dash] of lv) {
+    const y = Y(v), isNR = n === 'NR', c2 = isNR ? och : ink;
+    s += `<line x1="${AX}" x2="${XR}" y1="${y}" y2="${y}" stroke="${c2}" stroke-width="${wd}" ${dash ? `stroke-dasharray="${dash}"` : ''}/>` +
+      `<text x="${XR + 12}" y="${y + 7}" font-size="22" font-weight="700" fill="${c2}">${n}</text><text x="${XR + 96}" y="${y + 7}" font-size="21" fill="${c2}">${f(v / 100, isNR ? 2 : 2)} m</text>`;
   }
-  s += `<text x="12" y="14" font-size="11" fill="var(--muted,#667)">altura acima do NR (m)</text>`;
-  $('cartaSvg').innerHTML = s;
+  const dim = (x0, a, b, label) => `<line x1="${x0}" x2="${x0}" y1="${Y(a) + 1}" y2="${Y(b) - 1}" stroke="${ink}" stroke-width="1.3" marker-start="url(#arr)" marker-end="url(#arr)"/><text transform="translate(${x0 - 9} ${(Y(a) + Y(b)) / 2}) rotate(-90)" text-anchor="middle" font-size="18" fill="${ink}">${label}</text>`;
+  s += `<defs><marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${ink}"/></marker></defs>`;
+  s += dim(540, q.MHWS, q.MLWS, `sizígia ${m(q.MHWS - q.MLWS)} m`) + dim(598, q.MHWN, q.MLWN, `quadratura ${m(q.MHWN - q.MLWN)} m`) + '</g>';
+  $('cartaSvg').setAttribute('viewBox', `0 0 ${W} ${Ht}`); $('cartaSvg').innerHTML = s;
   $('cartaPrint').onclick = () => window.print();
 })();
