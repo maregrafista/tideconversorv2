@@ -32,7 +32,7 @@
 <!-- ============ ALTURAS ============ -->
 <section id="converter" class="panel" role="tabpanel" aria-labelledby="tab-converter">
   <div class="sectionhead">
-    <div><h2>Conversão de alturas</h2><p class="sub">Fazendinha ↔ Porto de Santana · calibração mensal de 2026</p></div>
+    <div><h2>Conversão de alturas</h2><p class="sub">Fazendinha ↔ Porto de Santana · calibração local de 2026</p></div>
     <button class="textbutton" data-method="converter">Método</button>
   </div>
 
@@ -53,8 +53,8 @@
           </div>
         </div>
         <div>
-          <label class="label" for="month">Mês da leitura · 2026</label>
-          <select id="month"></select>
+          <label class="label" for="calDate">Data da leitura</label>
+          <div class="inputbox"><input type="date" id="calDate" min="2026-01-01" max="2026-12-31"></div>
         </div>
       </div>
       <div id="monthBadge" class="badge" hidden></div>
@@ -83,7 +83,7 @@
 
     <div class="card">
       <h3>Conversão em lote</h3>
-      <p class="sub">Cole várias alturas (uma por linha) no mesmo sentido e mês escolhidos ao lado.</p>
+      <p class="sub">Cole várias alturas (uma por linha) no mesmo sentido e data escolhidos ao lado.</p>
       <label class="label" for="batch">Valores em metros</label>
       <textarea id="batch" rows="5" placeholder="1,80&#10;2,35&#10;3,10" spellcheck="false"></textarea>
       <div class="tablewrap" id="batchOut"></div>
@@ -92,24 +92,24 @@
   </div>
 
   <div class="card" style="margin-top:20px">
-    <div class="chart-head"><div><h3>Reta de calibração do mês</h3><p class="sub" id="calibSub"></p></div></div>
+    <div class="chart-head"><div><h3>Reta de calibração da data</h3><p class="sub" id="calibSub"></p></div></div>
     <div class="plotwrap"><svg class="chart" id="calibChart" viewBox="0 0 920 300" role="img" aria-label="Reta de calibração da régua para a tábua"></svg></div>
   </div>
 
   <details id="calibDetails"><summary>Entenda a calibração</summary>
     <p id="calibText"></p>
     <div class="calibration" id="model"></div>
-    <div class="tablewrap"><table id="modelTable"><caption>Ajustes mensais · T = a + b·R</caption>
-      <thead><tr><th>Mês</th><th>a (m)</th><th>b</th><th>Pares</th><th>RMSE T (cm)</th><th>RMSE R (cm)</th><th>Faixa R (m)</th></tr></thead><tbody></tbody></table></div>
-    <p>R = régua acima do zero; H = nível de Fazendinha acima do NR; T = tábua de Santana. H = R − 0,75; T = a + bR; no sentido inverso R = (T − a)/b. A redução de 0,75 m foi informada pelo usuário e pressupõe o mesmo zero entre a régua física e o RLS, sem nivelamento independente. O RMSE vem da retirada de semanas inteiras (validação temporal interna em 2026), não de outro ano, e não é intervalo de confiança.</p>
-    <p>Alturas intermediárias não foram validadas separadamente. O conversor não prevê horários nem aplica defasagem temporal às alturas.</p>
+    <div class="tablewrap"><table id="modelTable"><caption>Ajustes mensais de referência · T = a + b·R · [IC 95% de b por reamostragem de semanas]</caption>
+      <thead><tr><th>Mês</th><th>a (m)</th><th>b</th><th>Pares</th><th>Erro T (cm)</th><th>Erro R (cm)</th><th>Faixa R (m)</th></tr></thead><tbody></tbody></table></div>
+    <p>R = régua acima do zero; H = nível de Fazendinha acima do NR; T = tábua de Santana. H = R − 0,75; T = a + bR; no sentido inverso R = (T − a)/b (regredir R sobre T diretamente dá o mesmo erro, 7,7 cm). A redução de 0,75 m foi informada pelo usuário e pressupõe o mesmo zero entre a régua física e o RLS, sem nivelamento independente.</p>
+    <p>O ajuste em cada data usa os pares PM/BM com peso gaussiano (σ = 15 dias). Em validação por semanas excluídas o erro típico é de 7,8 cm, igual ao dos ajustes mensais (8,1 cm) e dos harmônicos (7,9 cm), mas sem saltos na virada do mês. O erro é validação temporal interna em 2026, não intervalo de confiança. Alturas intermediárias não foram validadas separadamente; o conversor não prevê horários nem aplica defasagem temporal às alturas.</p>
   </details>
 </section>
 
 <!-- ============ HORÁRIOS ============ -->
 <section id="lunar" class="panel" role="tabpanel" aria-labelledby="tab-lunar" hidden>
   <div class="sectionhead">
-    <div><h2>Diferenças de horário</h2><p class="sub">Observações de Fazendinha − previsão da tábua de Santana · 2026</p></div>
+    <div><h2>Diferenças de horário</h2><p class="sub">Observações de Fazendinha − previsão da tábua de Santana · jan–out/2026</p></div>
     <div class="section-actions"><button class="textbutton" id="exportCSV">Exportar CSV</button><button class="textbutton" data-method="lunar">Método</button></div>
   </div>
   <div class="card lunar-toolbar">
@@ -155,7 +155,7 @@
 
   <details><summary>Método e limitações</summary>
     <p><b>Diferença temporal = horário do extremo observado em Fazendinha − horário previsto na tábua de Santana.</b> São médias dos pares, separadas por mês do evento oficial, tipo de extremo e ciclo; não são a diferença entre horários médios calculados separadamente. Subtrair o NR não altera a defasagem.</p>
-    <p>Sizígia: janela em torno de Lua nova ou cheia. Quadratura: em torno dos quartos. Eventos fora da janela não entram. Extremos detectados por segmento com proeminência de 0,50 m; pareamento um a um do mesmo tipo, distância máxima de 180 min. Suporte padrão ≤20 min e patamar ≤40 min; ampliado ≤65 min. 970 extremos antes dos filtros.</p>
+    <p>Sizígia: janela em torno de Lua nova ou cheia. A partir de 11/08/2026 a amostragem do registrador é irregular, e o horário do extremo passa a ser estimado por ajuste parabólico local (erro típico ≈ 11 min em teste de decimação). Quadratura: em torno dos quartos. Eventos fora da janela não entram. Extremos detectados por segmento com proeminência de 0,50 m; pareamento um a um do mesmo tipo, distância máxima de 180 min. Suporte padrão ≤20 min e patamar ≤40 min; ampliado ≤65 min. Após a recontagem, 1.001 pares PM/BM; 943 com suporte de até 65 min.</p>
     <p>O IC 95% usa a distribuição t sobre os eventos e supõe independência entre eles; com eventos de dias consecutivos isso é otimista. DP descreve a dispersão dos eventos, não a incerteza da média. Os relógios foram mantidos conforme os arquivos, sem deslocamento inferido.</p>
   </details>
 </section>
@@ -163,7 +163,7 @@
 <!-- ============ HISTÓRICO ============ -->
 <section id="history" class="panel" role="tabpanel" aria-labelledby="tab-history" hidden>
   <div class="sectionhead">
-    <div><h2>Série histórica</h2><p class="sub">Nível médio em Fazendinha · out/2024 a jul/2026</p></div>
+    <div><h2>Série histórica</h2><p class="sub">Nível médio em Fazendinha · out/2024 a out/2026</p></div>
     <div class="section-actions"><button class="textbutton" id="exportHistory">Exportar CSV</button><button class="textbutton" data-method="history">Método</button></div>
   </div>
   <div class="history-toolbar">
@@ -209,7 +209,7 @@
 
   <details><summary>Dados históricos</summary>
     <p>2024 aparece separado por ter ocorrido seca extrema regional; 2025 é um comparador, não normal climatológica. As médias diárias exigem ≥260 amostras e intervalo máximo no dia ≤60 min. Médias mensais dão peso igual a cada dia qualificado; meses parciais são identificados.</p>
-    <p>Comparação out–dez de 2024 × 2025 usa meses completos. Registros de novembro e dezembro de 2025 não foram calibrados pela tábua de 2026. Fonte: XLSX Atalaia e arquivos Report fornecidos pelo usuário; a coluna E tem preferência nos horários coincidentes, sem média entre fontes.</p>
+    <p>Comparação out–dez de 2024 × 2025: dezembro de 2024 tem 30 de 31 dias (*). Fonte: série RLS de Fazendinha (atalaia-fazendinha-rls.xls) a partir de 07/11/2024; de 01/10 a 06/11/2024 usam-se os dados da v1. Dias com amostragem esparsa (após 11/08/2026) entram quando o maior intervalo é ≤65 min, pela média temporal (trapézios); em teste de decimação o erro foi de ≈0,1 cm. Cada dia exige cobertura completa; 22 pontos espúrios foram removidos.</p>
     <p>Contexto da seca: <a href="https://www.sgb.gov.br/sala-de-imprensa/-/asset_publisher/ujyx/content/monitoramento-hidrologico-permite-acompanhar-evolucao-da-estiagem-na-regiao-norte" target="_blank" rel="noopener">SGB/CPRM</a>.</p>
   </details>
 </section>
@@ -252,8 +252,8 @@
 
   <details><summary>Método da previsão</summary>
     <p>A aba usa os 1.411 extremos da tábua de Santana de 2026. Entre extremos consecutivos usa interpolação cossenoidal, T = T0 + (T1 − T0)·[1 − cos(π·u)]/2, que passa pelos extremos mas não é previsão harmônica oficial. Não se extrapola além da série.</p>
-    <p>Em Fazendinha, H = (T − a)/b − 0,75 com o ajuste do mês. Sem a opção de defasagem, os horários PM/BM são os de Santana. Com a opção, os extremos são deslocados pela defasagem média do mês e tipo (eventos de resolução preferencial; meses com menos de 10 pares usam a média de janeiro–julho). Essa correção não tem validação independente.</p>
-    <p>A coluna d’água só é calculada com profundidade local informada, referida ao mesmo NR: coluna = profundidade + nível. Ao trocar de local a profundidade é apagada. Para novembro e dezembro não há calibração: o app usa a de outubro e avisa que é extrapolação.</p>
+    <p>Em Fazendinha, H = (T − a)/b − 0,75 com o ajuste local da data. Sem a opção de defasagem, os horários PM/BM são os de Santana. Com a opção, os extremos são deslocados pela defasagem média do mês e tipo (eventos de resolução preferencial; meses com menos de 10 pares usam a média de janeiro–julho). Essa correção não tem validação independente.</p>
+    <p>A coluna d’água só é calculada com profundidade local informada, referida ao mesmo NR: coluna = profundidade + nível. Ao trocar de local a profundidade é apagada. Depois do último par observado (23/10/2026) o app repete a calibração mais recente e avisa que é extrapolação.</p>
   </details>
 </section>
 </main>

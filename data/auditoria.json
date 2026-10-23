@@ -1,15 +1,126 @@
 {
-  "file": "atalaia_loggrp_20260728_20260803.xlsx",
-  "sha256": "05f5030c2b6248f8fe214a92ac1d941a3aa3bb48aec062d91fc73332e8b27be1",
-  "first": "2024-09-30 16:20:00",
-  "last": "2026-07-14 06:30:00",
-  "rows": 186510,
-  "valid_E": 186506,
-  "isolated_peaks": 1,
-  "overlap": 55254,
-  "overlap_identical": 19472,
-  "overlap_RMSE_cm": 11.629722413145217,
-  "blend_rows": 66420,
-  "calibration_rows": 66419,
-  "source_note": "Coluna E identificada como altura acima do zero pelos graficos do XLSX; coluna F=E-0.75. Coluna D nao usada. Preferencia ao XLSX nos horarios sobrepostos, sem media entre fontes nem deslocamento de relogio. Pico isolado retirado apenas da analise. Medias diarias qualificadas: >=260 registros e intervalo maximo no dia <=60min."
+ "rows": 185773,
+ "first": "2024-11-07 18:45:00",
+ "last": "2026-10-23 08:50:00",
+ "spikes": 22,
+ "extremes": 2640,
+ "pairs": 1001,
+ "cal_pairs": 972,
+ "events_used": 943,
+ "last_pair": "2026-10-23 01:31:00",
+ "sigma_days": 15.0,
+ "pooled": {
+  "n": 972,
+  "rmse": 0.08101579074337913,
+  "rmse_R": 0.07790068981398204
+ },
+ "compare": {
+  "global": {
+   "n": 972,
+   "rmse": 11.84491744016819,
+   "mae": 9.262859034465034,
+   "bias": -0.01818152192728275,
+   "rmse_aug_oct": 19.995772754725785
+  },
+  "global_type": {
+   "n": 972,
+   "rmse": 11.444110372198024,
+   "mae": 8.976347788480084,
+   "bias": -0.027506028591822967,
+   "rmse_aug_oct": 18.48199708970314
+  },
+  "season1": {
+   "n": 972,
+   "rmse": 9.155038522254753,
+   "mae": 7.209874594162787,
+   "bias": 0.02174013416736473,
+   "rmse_aug_oct": 10.463598875762068
+  },
+  "season2": {
+   "n": 972,
+   "rmse": 7.850878605752144,
+   "mae": 6.265540626419868,
+   "bias": -0.025261441278194248,
+   "rmse_aug_oct": 7.602817669708813
+  },
+  "monthly": {
+   "n": 972,
+   "rmse": 8.101579074337904,
+   "mae": 6.40865617925955,
+   "bias": -0.06208891737966484,
+   "rmse_aug_oct": 7.702568507022926
+  },
+  "local7": {
+   "n": 972,
+   "rmse": 7.848245784208712,
+   "mae": 6.244862115941626,
+   "bias": 0.1709935698912314,
+   "rmse_aug_oct": 7.982493927746667
+  },
+  "local10": {
+   "n": 972,
+   "rmse": 7.821155103759664,
+   "mae": 6.240859308044871,
+   "bias": 0.09313003928565695,
+   "rmse_aug_oct": 7.956165975583157
+  },
+  "local15": {
+   "n": 972,
+   "rmse": 7.802406389723332,
+   "mae": 6.21702806669859,
+   "bias": 0.08971624927001982,
+   "rmse_aug_oct": 7.947044374032061
+  },
+  "local20": {
+   "n": 972,
+   "rmse": 7.841626274517223,
+   "mae": 6.22036561681214,
+   "bias": 0.1899065154391241,
+   "rmse_aug_oct": 8.02763220836151
+  },
+  "local15_pico_observado": {
+   "n": 972,
+   "rmse": 7.69956403328418,
+   "mae": 6.1325177585316295,
+   "bias": 0.08299401734987731,
+   "rmse_aug_oct": 6.807754080949473
+  }
+ },
+ "resid": {
+  "by_type": {
+   "PM": {
+    "mean_cm": 0.3324524609687794,
+    "sd_cm": 8.000613238286357
+   },
+   "BM": {
+    "mean_cm": -0.15603531909580512,
+    "sd_cm": 7.6041018208293565
+   }
+  },
+  "by_R_tercile": {
+   "baixo": {
+    "mean_cm": 1.9016922853816727,
+    "sd_cm": 6.962686713460943
+   },
+   "médio": {
+    "mean_cm": -2.3880324686273733,
+    "sd_cm": 7.702108865720341
+   },
+   "alto": {
+    "mean_cm": 0.7616917821282977,
+    "sd_cm": 8.094026503896005
+   }
+  },
+  "lag1_autocorr": 0.30405998944265555
+ },
+ "v1_compare": {
+  "matched": 966,
+  "mean_diff_min": 0.24665826052694675,
+  "by_period": {
+   "ate_13jul": 1.460505870253116,
+   "apos_14jul": -3.7278870102578563
+  }
+ },
+ "generated": "2026-10-23",
+ "source": "atalaia-fazendinha-rls.xls"
 }

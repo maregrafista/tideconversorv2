@@ -29,7 +29,6 @@ function nowParts() {
 const NOW = nowParts();
 const clock = ts => new Intl.DateTimeFormat('pt-BR', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(ts);
 const monthOf = ts => new Date(ts - 10800000).getUTCMonth() + 1;
-function modelFor(m) { m = Number(m); return m <= LAST_MODEL ? { p: MODELS[m], fallback: false } : { p: MODELS[LAST_MODEL], fallback: true }; }
 function setupSubnav(nav, onChange) {
   nav.addEventListener('click', e => {
     const b = e.target.closest('[data-view]'); if (!b) return;
@@ -38,17 +37,15 @@ function setupSubnav(nav, onChange) {
   });
 }
 function monthOptions(sel, defMonth) {
-  sel.innerHTML = HM.map((n, i) => `<option value="${i + 1}">${n}${i + 1 > LAST_MODEL ? ' · sem calibração' : ''}</option>`).join('');
+  sel.innerHTML = HM.slice(0, LAST_MODEL).map((n, i) => `<option value="${i + 1}">${n}</option>`).join('');
   sel.value = String(defMonth);
 }
-function qualityBadge(m) {
+function lagBadge(m) {
   m = Number(m);
-  if (m > LAST_MODEL) return `Sem calibração de ${HM[m - 1].toLowerCase()}: o app usa o ajuste de outubro como extrapolação. Maior incerteza.`;
-  const p = MODELS[m];
-  if (p.days < 25 || p.n < 90) return `Calibração parcial: ${p.n} pares em ${p.days} dias de ${HM[m - 1].toLowerCase()}. O ajuste cobre só parte do ciclo sizígia–quadratura.`;
-  return '';
+  if (m < 8) return '';
+  const n = D.events.filter(e => e.m === m && e.d).length;
+  return `A partir de 11/08/2026 o registrador passou a amostrar de forma irregular (15 a 60 min). Há ${n} eventos de resolução preferencial em ${HM[m - 1].toLowerCase()}; use "≤65 min · ampliado" com cautela, pois o horário do extremo é estimado por ajuste local.`;
 }
-
 /* ---------- abas ---------- */
 const PANELS = ['converter', 'lunar', 'history', 'forecast'];
 function showPanel(name, push = true) {
@@ -75,8 +72,23 @@ $('methodDialog').onclick = e => { if (e.target === $('methodDialog')) $('method
 
 /* ================= ALTURAS ================= */
 let mode = 'staff';
-function convert(v, source, m) {
-  const { p } = modelFor(m), r = source === 'staff' ? v : (v - p.a) / p.b;
+const DCAL = D.dcal, META = D.meta, LASTPAIR = META.last_pair.slice(0, 10);
+const dateISO = ts => new Date(ts - 10800000).toISOString().slice(0, 10);
+const fmtBR = iso => iso.split('-').reverse().join('/');
+// calibração local por data: reta T = a + b·R ajustada com pesos gaussianos (σ = 15 dias) em torno da data
+function calFor(iso) {
+  const d = new Date(iso + 'T00:00:00Z'), raw = Math.floor((d - Date.UTC(2026, 0, 1)) / 864e5) + 1, doy = Math.max(1, Math.min(365, raw));
+  const r = DCAL[doy - 1];
+  return { a: r[0], b: r[1], neff: r[2], rmse: r[3], rmse_R: r[3] / r[1], min: r[4], max: r[5], minT: r[6], maxT: r[7], flag: r[8], outside: raw < 1 || raw > 365, iso, doy };
+}
+function calBadge(p) {
+  if (p.outside) return 'A calibração cobre somente 2026; usando o ajuste do dia mais próximo.';
+  if (p.flag === 2) return `Ainda não há pares depois de ${fmtBR(LASTPAIR)}: usando a calibração mais recente (extrapolação). Maior incerteza.`;
+  if (p.neff < 20) return `Ajuste local com poucos pares (≈${Math.round(p.neff)} efetivos), o que amplia a incerteza.`;
+  return '';
+}
+function convert(v, source, p) {
+  const r = source === 'staff' ? v : (v - p.a) / p.b;
   return { r, h: r - .75, t: source === 'table' ? v : p.a + p.b * r };
 }
 function renderRange(v, lo, hi) {
@@ -86,33 +98,32 @@ function renderRange(v, lo, hi) {
     `<span class="lbl" style="left:${pos(lo)}%">${fmt(lo)}</span><span class="lbl" style="left:${pos(hi)}%;transform:translateX(-100%)">${fmt(hi)}</span>`;
 }
 function renderConverter() {
-  const m = $('month').value, { p, fallback } = modelFor(m), v = parse($('value').value), ok = Number.isFinite(v);
+  const iso = $('calDate').value || NOW.date, p = calFor(iso), v = parse($('value').value), ok = Number.isFinite(v);
   $('staffMode').setAttribute('aria-pressed', mode === 'staff'); $('tableMode').setAttribute('aria-pressed', mode === 'table');
   $('valueLabel').textContent = mode === 'staff' ? 'Régua acima do zero' : 'Altura da tábua de Santana';
   $('equivLabel').innerHTML = mode === 'staff' ? 'Equivalente na tábua<br>de Santana' : 'Equivalente na régua<br>acima do zero';
   $('nrNote').textContent = mode === 'staff' ? 'Leitura − 0,75 m' : 'Estimativa para Fazendinha';
-  $('basis').textContent = 'NR = leitura da régua − 0,75 m. A equivalência usa o ajuste de ' + p.name.toLowerCase() + (fallback ? ' (extrapolado)' : '') + '.';
-  const badge = qualityBadge(m); $('monthBadge').hidden = !badge; $('monthBadge').textContent = badge;
+  $('basis').textContent = 'NR = leitura da régua − 0,75 m. A equivalência usa o ajuste local da data selecionada (janela gaussiana de ' + META.sigma_days + ' dias).';
+  const badge = calBadge(p); $('monthBadge').hidden = !badge; $('monthBadge').textContent = badge;
   const lo = mode === 'staff' ? p.min : p.minT, hi = mode === 'staff' ? p.max : p.maxT;
   $('value').setAttribute('aria-invalid', !ok && $('value').value.trim() !== '');
   $('warning').hidden = true; $('calculation').textContent = '';
   renderRange(ok ? v : NaN, lo, hi);
   if (ok) {
-    const q = convert(v, mode, m), err = (mode === 'staff' ? p.rmse : p.rmse_R) * 100;
+    const q = convert(v, mode, p), err = (mode === 'staff' ? p.rmse : p.rmse_R) * 100;
     $('nr').innerHTML = (mode === 'table' ? '≈ ' : '') + fmt(q.h) + ' <small>m</small>';
     $('equiv').innerHTML = '≈ ' + fmt(mode === 'staff' ? q.t : q.r) + ' <small>m</small>';
-    $('equivNote').textContent = (mode === 'staff' ? 'Estimativa para Santana' : 'Estimativa para Fazendinha') + ' · RMSE ≈ ' + fmt(err, 1) + ' cm';
+    $('equivNote').textContent = (mode === 'staff' ? 'Estimativa para Santana' : 'Estimativa para Fazendinha') + ' · erro típico ≈ ' + fmt(err, 1) + ' cm';
     $('calculation').textContent = mode === 'staff'
       ? `Cálculo: NR = ${fmt(v)} − 0,75 = ${fmt(q.h)} m. Tábua = ${fmt(p.a, 3)} + ${fmt(p.b, 3)} × ${fmt(v)} = ${fmt(q.t)} m.`
       : `Cálculo: régua = (${fmt(v)} − (${fmt(p.a, 3)})) / ${fmt(p.b, 3)} = ${fmt(q.r)} m; NR = ${fmt(q.r)} − 0,75 = ${fmt(q.h)} m.`;
-    if (v < lo || v > hi) { $('warning').hidden = false; $('warning').textContent = `Extrapolação: altura fora da faixa calibrada neste mês (${fmt(lo)} a ${fmt(hi)} m). Maior incerteza.`; }
+    if (v < lo || v > hi) { $('warning').hidden = false; $('warning').textContent = `Extrapolação: altura fora da faixa calibrada nesta época (${fmt(lo)} a ${fmt(hi)} m). Maior incerteza.`; }
   } else {
     $('nr').textContent = '—'; $('equiv').textContent = '—'; $('equivNote').textContent = '';
     if ($('value').value.trim()) { $('warning').hidden = false; $('warning').textContent = 'Informe uma altura válida em metros. Exemplo: 2,00.'; }
   }
-  $('model').textContent = `${p.name} · T = ${fmt(p.a, 6)} + ${fmt(p.b, 6)} × R · ${p.n} pares · RMSE por semanas excluídas: tábua ${fmt(p.rmse * 100, 1)} cm; régua ${fmt(p.rmse_R * 100, 1)} cm.`;
-  $('calibSub').textContent = `${p.name} · ${p.n} pares · faixa calibrada da régua ${fmt(p.min)} a ${fmt(p.max)} m`;
-  document.querySelectorAll('#modelTable tbody tr').forEach(tr => tr.classList.toggle('selected', Number(tr.dataset.m) === Math.min(Number(m), LAST_MODEL)));
+  $('model').textContent = `${fmtBR(iso)} · T = ${fmt(p.a, 6)} + ${fmt(p.b, 6)} × R · ≈${Math.round(p.neff)} pares efetivos · erro típico (validação por semanas excluídas): tábua ${fmt(p.rmse * 100, 1)} cm; régua ${fmt(p.rmse_R * 100, 1)} cm.`;
+  $('calibSub').textContent = `${fmtBR(iso)} · faixa calibrada da régua ${fmt(p.min)} a ${fmt(p.max)} m · pontos = pares PM/BM em ±30 dias`;
   drawCalib(ok ? v : NaN, p);
   renderBatch();
 }
@@ -120,13 +131,15 @@ function drawCalib(v, p) {
   const W = wide() ? 460 : 920, H = 300, el = $('calibChart'); el.setAttribute('viewBox', `0 0 ${W} ${H}`);
   const rLo = Math.min(0.5, p.min - .3), rHi = p.max + .4, tLo = p.a + p.b * rLo, tHi = p.a + p.b * rHi;
   const x = r => 56 + (r - rLo) / (rHi - rLo) * (W - 80), y = t => 250 - (t - Math.min(0, tLo)) / (tHi - Math.min(0, tLo)) * 215;
-  const grid = css('--chart-grid'), txt = css('--chart-text'), pm = css('--pm'), oc = css('--ochre');
+  const grid = css('--chart-grid'), txt = css('--chart-text'), pm = css('--pm'), bm = css('--bm'), oc = css('--ochre');
   let s = '';
   for (let r = Math.ceil(rLo); r <= rHi; r += 1) s += `<line x1="${x(r)}" x2="${x(r)}" y1="30" y2="250" stroke="${grid}"/><text x="${x(r)}" y="272" text-anchor="middle" font-size="11" fill="${txt}">${r}</text>`;
   for (let t = Math.ceil(Math.min(0, tLo)); t <= tHi; t += 1) s += `<line x1="52" x2="${W - 24}" y1="${y(t)}" y2="${y(t)}" stroke="${grid}"/><text x="46" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="${txt}">${t}</text>`;
   s += `<text x="52" y="18" font-size="11" fill="${txt}">Tábua (m)</text><text x="${W - 24}" y="290" text-anchor="end" font-size="11" fill="${txt}">Régua acima do zero (m)</text>`;
+  const t0 = Date.UTC(2026, 0, 1) + (p.doy - 1) * 864e5 + 10800000;
+  D.pairs.forEach(q => { if (Math.abs(q[0] - t0) <= 30 * 864e5) s += `<circle cx="${x(q[1])}" cy="${y(q[2])}" r="2.6" fill="${q[3] ? bm : pm}" opacity=".45"/>`; });
   s += `<line x1="${x(rLo)}" y1="${y(tLo)}" x2="${x(rHi)}" y2="${y(tHi)}" stroke="${pm}" stroke-dasharray="5 4" opacity=".5" stroke-width="2"/>`;
-  s += `<line x1="${x(p.min)}" y1="${y(p.a + p.b * p.min)}" x2="${x(p.max)}" y2="${y(p.a + p.b * p.max)}" stroke="${pm}" stroke-width="3.5"/>`;
+  s += `<line x1="${x(p.min)}" y1="${y(p.a + p.b * p.min)}" x2="${x(p.max)}" y2="${y(p.a + p.b * p.max)}" stroke="${pm}" stroke-width="3"/>`;
   if (Number.isFinite(v)) {
     const r = mode === 'staff' ? v : (v - p.a) / p.b, t = p.a + p.b * r;
     if (r >= rLo && r <= rHi) s += `<line x1="${x(r)}" x2="${x(r)}" y1="${y(t)}" y2="250" stroke="${oc}" stroke-dasharray="4 4"/><line x1="52" x2="${x(r)}" y1="${y(t)}" y2="${y(t)}" stroke="${oc}" stroke-dasharray="4 4"/><circle cx="${x(r)}" cy="${y(t)}" r="6" fill="${oc}"/>`;
@@ -134,40 +147,40 @@ function drawCalib(v, p) {
   el.innerHTML = s;
 }
 function renderBatch() {
-  const m = $('month').value, { p } = modelFor(m), lines = $('batch').value.split(/\n+/).map(x => x.trim()).filter(Boolean);
+  const p = calFor($('calDate').value || NOW.date), lines = $('batch').value.split(/\n+/).map(x => x.trim()).filter(Boolean);
   if (!lines.length) { $('batchOut').innerHTML = ''; return; }
   const lo = mode === 'staff' ? p.min : p.minT, hi = mode === 'staff' ? p.max : p.maxT;
   $('batchOut').innerHTML = '<table><thead><tr><th>' + (mode === 'staff' ? 'Régua (m)' : 'Tábua (m)') + '</th><th>NR (m)</th><th>' + (mode === 'staff' ? 'Tábua (m)' : 'Régua (m)') + '</th><th>Obs.</th></tr></thead><tbody>' +
-    lines.map(l => { const v = parse(l); if (!Number.isFinite(v)) return `<tr><td>${l.replace(/[<>&]/g, '')}</td><td>—</td><td>—</td><td>inválido</td></tr>`; const q = convert(v, mode, m); return `<tr><td>${fmt(v)}</td><td>${fmt(q.h)}</td><td>${fmt(mode === 'staff' ? q.t : q.r)}</td><td>${v < lo || v > hi ? 'extrapolado' : ''}</td></tr>`; }).join('') + '</tbody></table>';
+    lines.map(l => { const v = parse(l); if (!Number.isFinite(v)) return `<tr><td>${l.replace(/[<>&]/g, '')}</td><td>—</td><td>—</td><td>inválido</td></tr>`; const q = convert(v, mode, p); return `<tr><td>${fmt(v)}</td><td>${fmt(q.h)}</td><td>${fmt(mode === 'staff' ? q.t : q.r)}</td><td>${v < lo || v > hi ? 'extrapolado' : ''}</td></tr>`; }).join('') + '</tbody></table>';
 }
 function fillModelTable() {
-  $('modelTable').querySelector('tbody').innerHTML = Object.entries(MODELS).map(([m, p]) => `<tr data-m="${m}"><td>${p.name}</td><td>${fmt(p.a, 3)}</td><td>${fmt(p.b, 3)}</td><td>${p.n}</td><td>${fmt(p.rmse * 100, 1)}</td><td>${fmt(p.rmse_R * 100, 1)}</td><td>${fmt(p.min)}–${fmt(p.max)}</td></tr>`).join('');
-  const pairs = Object.values(MODELS).reduce((s, p) => s + p.n, 0);
-  $('calibText').textContent = `Marégrafos usados somente para calibração. 66.419 leituras válidas de 2026 e ${pairs.toLocaleString('pt-BR')} pares nos horários oficiais PM/BM, com ajustes mensais de janeiro a outubro (agosto a outubro são parciais). Não há consulta em tempo real.`;
+  $('modelTable').querySelector('tbody').innerHTML = Object.entries(MODELS).map(([m, p]) => `<tr data-m="${m}"><td>${p.name}</td><td>${fmt(p.a, 3)}</td><td>${fmt(p.b, 3)}<small> [${fmt(p.b_ci[0], 3)}–${fmt(p.b_ci[1], 3)}]</small></td><td>${p.n}</td><td>${fmt(p.rmse * 100, 1)}</td><td>${fmt(p.rmse_R * 100, 1)}</td><td>${fmt(p.min)}–${fmt(p.max)}</td></tr>`).join('');
+  $('calibText').textContent = `A série RLS de Fazendinha (${META.rows.toLocaleString('pt-BR')} leituras de ${fmtBR(META.first.slice(0, 10))} a ${fmtBR(META.last.slice(0, 10))}) é usada somente para calibração: ${META.cal_pairs} pares de extremos PM/BM de 2026, comparados com a tábua de Santana. O ajuste é local no tempo (pesos gaussianos de ${META.sigma_days} dias), de modo que não há saltos na virada do mês. Último par: ${fmtBR(LASTPAIR)}. Não há consulta em tempo real.`;
 }
-function chooseMonth(m) { $('month').value = String(m); $('lunarMonth').value = String(m); renderConverter(); renderLunar(); }
+function chooseMonth(m) { $('lunarMonth').value = String(m); renderLunar(); }
+function setCalDate(iso) { $('calDate').value = iso; renderConverter(); }
 $('staffMode').onclick = () => { mode = 'staff'; renderConverter(); };
 $('tableMode').onclick = () => { mode = 'table'; renderConverter(); };
 $('swapMode').onclick = () => {
   const v = parse($('value').value);
-  if (Number.isFinite(v)) { const q = convert(v, mode, $('month').value); $('value').value = fmt(mode === 'staff' ? q.t : q.r); }
+  if (Number.isFinite(v)) { const q = convert(v, mode, calFor($('calDate').value || NOW.date)); $('value').value = fmt(mode === 'staff' ? q.t : q.r); }
   mode = mode === 'staff' ? 'table' : 'staff'; renderConverter();
 };
 $('value').addEventListener('input', renderConverter);
-$('month').onchange = () => chooseMonth($('month').value);
+$('calDate').onchange = renderConverter;
 $('batch').addEventListener('input', renderBatch);
 const stepValue = d => { const v = parse($('value').value); $('value').value = fmt((Number.isFinite(v) ? v : 0) + d); renderConverter(); };
 $('valueUp').onclick = () => stepValue(.05); $('valueDown').onclick = () => stepValue(-.05);
 $('value').addEventListener('keydown', e => { if (e.key === 'ArrowUp') { e.preventDefault(); stepValue(.01); } if (e.key === 'ArrowDown') { e.preventDefault(); stepValue(-.01); } });
 $('copyResult').onclick = () => {
   const v = parse($('value').value); if (!Number.isFinite(v)) return toast('Informe uma altura válida');
-  const m = $('month').value, q = convert(v, mode, m), mn = modelFor(m).p.name;
-  copy(mode === 'staff' ? `Régua ${fmt(v)} m (${mn}/2026): NR ${fmt(q.h)} m; tábua de Santana ≈ ${fmt(q.t)} m.` : `Tábua ${fmt(v)} m (${mn}/2026): régua ≈ ${fmt(q.r)} m; NR ≈ ${fmt(q.h)} m.`);
+  const iso = $('calDate').value || NOW.date, q = convert(v, mode, calFor(iso));
+  copy(mode === 'staff' ? `Régua ${fmt(v)} m (${fmtBR(iso)}): NR ${fmt(q.h)} m; tábua de Santana ≈ ${fmt(q.t)} m.` : `Tábua ${fmt(v)} m (${fmtBR(iso)}): régua ≈ ${fmt(q.r)} m; NR ≈ ${fmt(q.h)} m.`);
 };
 $('batchCsv').onclick = () => {
   const lines = $('batch').value.split(/\n+/).map(x => x.trim()).filter(Boolean); if (!lines.length) return toast('Cole valores primeiro');
-  const m = $('month').value; let csv = '﻿Entrada_m;NR_m;Equivalente_m;Sentido;Mes\r\n';
-  lines.forEach(l => { const v = parse(l); if (!Number.isFinite(v)) return; const q = convert(v, mode, m); csv += [fmt(v, 4), fmt(q.h, 4), fmt(mode === 'staff' ? q.t : q.r, 4), mode === 'staff' ? 'regua->tabua' : 'tabua->regua', HM[m - 1]].join(';') + '\r\n'; });
+  const iso = $('calDate').value || NOW.date, p = calFor(iso); let csv = '﻿Entrada_m;NR_m;Equivalente_m;Sentido;Data_calibracao\r\n';
+  lines.forEach(l => { const v = parse(l); if (!Number.isFinite(v)) return; const q = convert(v, mode, p); csv += [fmt(v, 4), fmt(q.h, 4), fmt(mode === 'staff' ? q.t : q.r, 4), mode === 'staff' ? 'regua->tabua' : 'tabua->regua', iso].join(';') + '\r\n'; });
   download(csv, 'text/csv;charset=utf-8', 'TideConversor_Lote.csv');
 };
 
@@ -193,7 +206,7 @@ function renderLunar() {
   const month = Number($('lunarMonth').value), width = $('window').value;
   $('phaseCards').innerHTML = ['S', 'Q'].map(c => `<article class="card phasecard"><div class="phase-title"><div><h3>${CYC[c]}</h3><p>${HM[month - 1]} · ${c === 'S' ? 'Lua nova e cheia' : 'Quartos crescente e minguante'}</p></div><div class="moonicon" aria-hidden="true"><span class="moon ${c === 'S' ? '' : 'quarter'}"></span><span class="moon ${c === 'S' ? 'full' : 'last'}"></span></div></div><div class="phase-values">${phaseValue(month, c, 'PM')}${phaseValue(month, c, 'BM')}</div></article>`).join('');
   $('phaseNote').textContent = `Janelas de ±${width} dia${width === '1' ? '' : 's'} em torno das fases. Eventos de transição ficam fora das médias. ` + ($('support').value === 'dense' ? 'Suporte: até 20 min e patamar até 40 min.' : 'Suporte: até 65 min.');
-  const lb = qualityBadge(month) && month > 7 ? 'Mês com poucos pares. Em outubro os valores divergem do padrão de janeiro a julho (preamar ≈ −19 min), o que pode refletir deslocamento de relógio ou amostra insuficiente; interprete com cautela.' : '';
+  const lb = lagBadge(month);
   $('lunarBadge').hidden = !lb; $('lunarBadge').textContent = lb;
   const fmtDay = new Intl.DateTimeFormat('pt-BR', { timeZone: TZ, day: '2-digit', month: '2-digit' });
   $('calendar').innerHTML = D.phases.filter(p => monthOf(p.ts) === month).map(p => `<span>${p.phase} · ${fmtDay.format(p.ts)}</span>`).join('');
@@ -245,8 +258,8 @@ let histScale = 'monthly';
 const YC = { 2024: '--c2024', 2025: '--c2025', 2026: '--c2026' };
 const mrow = (y, m) => D.monthly.find(q => q.year === y && q.month === m);
 function renderHistory() {
-  $('droughtCards').innerHTML = D.comparison.map(q => `<article class="card comparison-card"><h3>${HM[q.month - 1]} · 2024 × 2025</h3><div class="number">${fmt(Math.abs(q.delta_cm), 1)} <small>cm abaixo</small></div><div class="hint">Média acima do NR: ${fmt(q.mean_2024, 3)} m em 2024; ${fmt(q.mean_2025, 3)} m em 2025.<br>${q.days2024} e ${q.days2025} dias válidos.</div></article>`).join('');
-  const yoy = [1, 2, 3, 4, 5, 6].map(m => [mrow(2025, m), mrow(2026, m)]).filter(([a, b]) => a && b && !a.partial && !b.partial && a.mean_H !== null && b.mean_H !== null);
+  $('droughtCards').innerHTML = D.comparison.map(q => `<article class="card comparison-card"><h3>${HM[q.month - 1]} · 2024 × 2025${q.partial2024 ? ' *' : ''}</h3><div class="number">${fmt(Math.abs(q.delta_cm), 1)} <small>cm abaixo</small></div><div class="hint">Média acima do NR: ${fmt(q.mean_2024, 3)} m em 2024; ${fmt(q.mean_2025, 3)} m em 2025.<br>${q.days2024} e ${q.days2025} dias válidos.</div></article>`).join('');
+  const yoy = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(m => [mrow(2025, m), mrow(2026, m)]).filter(([a, b]) => a && b && !a.partial && !b.partial && a.mean_H !== null && b.mean_H !== null);
   $('yoyCards').innerHTML = yoy.map(([a, b]) => { const d = (b.mean_H - a.mean_H) * 100; return `<article class="card comparison-card"><h3>${HM[b.month - 1]} · 2026 × 2025</h3><div class="number">${fmt(Math.abs(d), 1)} <small>cm ${d < 0 ? 'abaixo' : 'acima'}</small></div><div class="hint">Média acima do NR: ${fmt(b.mean_H, 3)} m em 2026; ${fmt(a.mean_H, 3)} m em 2025.<br>${b.valid_days} e ${a.valid_days} dias válidos.</div></article>`; }).join('') || '<p class="note">Sem meses completos comparáveis.</p>';
   $('historyCaption').textContent = `Médias mensais ${refLabel()} (m). Dias válidos entre parênteses; * mês parcial.`;
   $('historyTable').innerHTML = HM.map((m, i) => `<tr><td>${m}</td>` + [2024, 2025, 2026].map(y => { const q = mrow(y, i + 1); return `<td>${!q || q.mean_H === null ? '—' : fmt(hval(q), 3) + (q.partial ? '*' : '') + ` <small>(${q.valid_days}/${q.calendar_days})</small>`}</td>`; }).join('') + '</tr>').join('');
@@ -339,7 +352,7 @@ function interpT(ts, a) {
 function waterForecast(ts, loc, depth, lagOn) {
   const t = interpT(ts, predsFor(loc, lagOn)); if (t === null) return null;
   let h = t;
-  if (loc === 'faz') { const { p } = modelFor(monthOf(ts)); h = (t - p.a) / p.b - .75; }
+  if (loc === 'faz') { const p = calFor(dateISO(ts)); h = (t - p.a) / p.b - .75; }
   return { t, h, column: depth === null ? null : Math.max(0, depth + h), dry: depth !== null && depth + h < 0 };
 }
 function forecastInputs() {
@@ -359,9 +372,7 @@ function renderForecast() {
   else if (q.date < '2026-01-01' || q.date > '2026-12-31') why = 'A tábua disponível cobre somente 2026.';
   else if (!q.validDepth) why = 'Informe uma profundidade ao NR maior ou igual a zero, em metros.';
   if (why) { w.textContent = why; w.hidden = false; return; }
-  const month = monthOf(q.day);
-  if (q.location === 'faz' && month > LAST_MODEL) { w.textContent = `Sem calibração de ${HM[month - 1].toLowerCase()}: usando o ajuste de outubro como extrapolação. Maior incerteza.`; w.hidden = false; }
-  else if (q.location === 'faz' && qualityBadge(month)) { w.textContent = qualityBadge(month); w.hidden = false; }
+  if (q.location === 'faz') { const cb = calBadge(calFor(q.date)); if (cb) { w.textContent = cb; w.hidden = false; } }
   const f = waterForecast(q.ts, q.location, q.depth, q.lagOn);
   if (f) {
     $('forecastLevel').innerHTML = '≈ ' + fmt(f.h) + ' <small>m</small>';
@@ -441,12 +452,13 @@ $('exportForecast').onclick = () => {
 
 /* ================= início ================= */
 const defMonth = NOW.year === 2026 ? NOW.month : 1;
-monthOptions($('month'), defMonth); monthOptions($('lunarMonth'), Math.min(defMonth, LAST_MODEL));
+monthOptions($('lunarMonth'), Math.min(defMonth, LAST_MODEL));
+$('calDate').value = NOW.year === 2026 ? NOW.date : '2026-01-01';
 fillModelTable(); renderConverter(); renderLunar(); renderHistory();
 $('historyReadout').textContent = 'Selecione um ponto no gráfico. Referência: ' + refLabel() + '.';
 $('forecastDate').value = NOW.year === 2026 ? NOW.date : '2026-01-01'; $('forecastTime').value = NOW.year === 2026 ? NOW.time : '12:00';
 showPanel((location.hash || '').slice(1), false);
-window.addEventListener('resize', () => { drawCalib(parse($('value').value), modelFor($('month').value).p); drawLagChart(); drawHistory(); renderForecast(); });
+window.addEventListener('resize', () => { drawCalib(parse($('value').value), calFor($('calDate').value || NOW.date)); drawLagChart(); drawHistory(); renderForecast(); });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { renderConverter(); drawLagChart(); drawHistory(); renderForecast(); });
 window.addEventListener('hashchange', () => showPanel(location.hash.slice(1), false));
 

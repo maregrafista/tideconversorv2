@@ -1,50 +1,71 @@
-# Reanálise dos dados do TideConversor
+# Reanálise completa a partir da série RLS de Fazendinha
 
-Refeita em 23/10/2026 a partir de tudo o que a versão 1 publicou: 10 ajustes mensais, 970 eventos de defasagem, 1.411 extremos da tábua, 22 médias mensais e 643 médias diárias.
+Dados: `atalaia-fazendinha-rls.xls` (tabela HTML com data/hora Brasil e RLS, em metros acima do zero da régua), 185.773 leituras de 07/11/2024 18:45 a 23/10/2026 08:50. Tábua: os 1.411 extremos de Santana 2026 já embutidos na v1 (o PDF original não foi fornecido). Fases lunares: USNO, como na v1. Todo o processamento foi refeito do zero (scripts em `analise/`).
 
-**Limite importante:** as leituras brutas dos marégrafos (XLSX Atalaia e arquivos Report) e o PDF da tábua não estão no repositório. Por isso **os coeficientes a e b não foram reajustados**; foram auditados. A regressão só pode ser refeita com os arquivos originais.
+## 1. Qualidade da série
 
-## 1. Calibração de alturas (T = a + b·R)
+- RLS = leitura da régua (R): as médias diárias coincidem com as da v1 (diferença mediana 0,0 cm em 602 dias comuns).
+- Amostragem de 5 min até 10/08/2026. **A partir de 11/08/2026 o registrador passa a gravar de forma irregular** (mediana 15 min em outubro, p90 de 60 min). Antes disso houve lacunas de 24 h (17–18/01/2025, 03–04/02/2025, 18–19/02/2025, 23–24/03/2026), de 48 h (31/07–02/08/2026) e de 221 h (02–11/08/2026), e uma lacuna de 23 dias (16/09 a 09/10/2026).
+- 22 pontos espúrios removidos (desvio > 0,35 m da mediana móvel em trechos regulares), entre eles os de 05–06/01/2026 (saltos de ±1,7 m) e 09/06/2026 10:30.
+- A série da v1 (XLSX + Reports) marcava os extremos até 13/07/2026 cerca de uma amostra (5 min) antes desta; depois de 14/07 as fontes coincidem. A origem desse deslocamento de relógio não pode ser decidida só com os dados.
 
-- Os RMSE mensais reproduzem os valores publicados: 1.003 pares, **RMSE 8,30 cm (tábua) e 7,94 cm (régua)**, ponderados por pares.
-- Janeiro–julho isolados: 8,18 cm e 7,87 cm. Os meses cheios são estáveis.
-- Agosto, setembro e outubro têm só 77, 61 e 51 pares (21, 16 e 14 dias), e 34, 39 e 23 eventos com resolução preferencial. A faixa calibrada de outubro (régua 0,83–3,46 m) é menor que a dos outros meses (até ≈4,2 m). O RMSE por semanas excluídas (outubro 11,3 cm) é otimista com tão poucas semanas.
-- Os ajustes variam entre b = 1,016 e 1,073 e a = −0,83 e −0,50: há deriva sazonal real, então usar o ajuste do mês certo importa.
-- **Mudança no app:** sinaliza meses com calibração parcial; mostra a faixa calibrada na barra e na reta; usa outubro como extrapolação (com aviso) em novembro e dezembro, em vez de recusar.
+## 2. Extremos e pares
 
-## 2. Defasagens de horário (observado em Fazendinha − previsto em Santana)
+- 2.640 extremos observados (oscilação mínima de 0,50 m, horário no centro do patamar), 1.001 pares um a um com a tábua (distância máxima 180 min). A recontagem reproduz a v1: 966 dos 970 eventos coincidem.
+- **Teste de decimação** (dias de 5 min reduzidos a amostras irregulares): a altura no horário oficial por interpolação linear tem erro de 0,4 cm (intervalo ≤20 min), 1,2 cm (20–40), 3,0 cm (40–65) e 11 cm acima de 65 min (3,1 cm com ajuste quadrático local). A v1 exigia ≤20 min; basta ≤40 min (linear) ou ≤90 min com ajuste quadrático. Resultado: 972 pares de calibração (agosto 72, setembro 59, outubro 32; a v1 usava só os pares densos nesses meses).
+- O horário do extremo em dados esparsos: ajuste parabólico erra ≈ 10,6 min (RMS) contra 18,8 min pela amostra mais alta.
 
-Janela ±2 dias, resolução preferencial:
+## 3. Calibração de alturas
 
-| | n | média | mediana | DP | IC 95% da média |
+Método da v1 reproduzido (T da tábua contra R lida no horário oficial do extremo): coeficientes de janeiro a julho coincidem com a v1 em ±0,003 (a) e ±0,004 (b).
+
+**Erro por semanas excluídas** (validação cruzada, todos os pares, RMSE em cm):
+
+| modelo | RMSE | ago–out |
+|---|---|---|
+| uma reta para o ano | 11,8 | 20,0 |
+| reta + efeito PM/BM | 11,4 | 18,5 |
+| 1 harmônico anual | 9,2 | 10,5 |
+| 2 harmônicos anuais | 7,85 | 7,6 |
+| **mensal (v1)** | **8,10** | 7,7 |
+| local, σ = 7 / 10 / **15** / 20 dias | 7,85 / 7,82 / **7,80** / 7,84 | ≈ 8,0 |
+| local, R no pico observado | 7,70 | – |
+
+- Os ajustes mensais da v1 são adequados (8,1 cm; v1 publicava 8,30 com menos pares). O ajuste **local no tempo (σ = 15 d)** tem erro igual (7,8 cm), sem degraus na virada do mês e com extrapolação mais estável. É o que o app usa agora.
+- Referenciar a altura ao pico observado em vez do horário oficial quase não reduz o erro (7,7 cm): o espalhamento de ≈ 8 cm vem da diferença entre a tábua de Santana e o nível real em Fazendinha (vazão do rio, meteorologia, tábua harmônica), não do descompasso de horário.
+- Regredir R sobre T diretamente (7,7 cm) e inverter a reta T~R (7,8 cm) dão o mesmo erro; a conversão pode ser invertida sem perda.
+- Resíduos: PM +0,3 cm, BM −0,2 cm; por terço de altura +1,9 / −2,4 / +0,8 cm (estrutura pequena); autocorrelação 0,30 entre pares consecutivos (os intervalos de confiança sem bootstrap por semana seriam otimistas).
+- Coeficientes mensais com IC 95% (reamostragem de semanas), em `data/calibracao_mensal.csv`. Ex.: junho b = 1,023 [1,004–1,037]; outubro a = −0,459 [−0,489 a −0,438].
+- Deriva sazonal: a varia de −0,83 (março) a −0,46 (outubro), b de 1,014 (maio) a 1,068 (agosto).
+- Depois de 23/10/2026 não há pares: repete-se a calibração mais recente e o app avisa.
+
+## 4. Defasagens de horário (observado − tábua de Santana)
+
+Janela ±2 dias, resolução preferencial (lacuna ≤20 min, patamar ≤40 min); IC 95% da média:
+
+| | n | média | mediana | DP | IC |
 |---|---|---|---|---|---|
-| Sizígia, preamar | 130 | −18,9 min | −19,8 | 9,8 | ±1,7 |
-| Quadratura, preamar | 115 | −15,9 min | −17,0 | 11,0 | ±2,0 |
-| Sizígia, baixamar | 127 | +0,7 min | +1,0 | 5,8 | ±1,0 |
-| Quadratura, baixamar | 122 | −2,2 min | −3,5 | 10,1 | ±1,8 |
+| Sizígia, PM | 93 | −17,5 | −17,0 | 11,1 | ±2,3 |
+| Quadratura, PM | 74 | −15,6 | −16,0 | 9,7 | ±2,2 |
+| Sizígia, BM | 94 | +3,7 | +3,5 | 6,8 | ±1,4 |
+| Quadratura, BM | 73 | −3,5 | −1,0 | 11,8 | ±2,7 |
 
-- A preamar chega ≈ 16–19 min **antes** da previsão de Santana; a baixamar praticamente coincide.
-- Sizígia × quadratura: diferença de −3,0 min na preamar (t ≈ −2,3) e +3,0 min na baixamar (t ≈ 2,8). Existe, mas é pequena perante o DP de 6–11 min; não é um efeito que mude uso prático.
-- Janeiro–julho agrupados: PM −18,6 ± 8,5 min (n = 225); BM −1,4 ± 7,5 min (n = 223).
-- A média mensal da preamar varia de −23 min (abril) a −12 min (julho), um padrão sazonal.
-- **Outubro destoa:** PM +13,7 min e BM +19,2 min (n = 6 cada), contra ≈ −19 e ≈ −1 min no resto do ano. Há ainda 7 eventos com |defasagem| > 60 min, todos de agosto a outubro e quase todos fora da resolução preferencial. Isso é compatível com deslocamento de relógio do registrador ou amostra insuficiente, e não deve ser lido como mudança física. O app avisa nesses meses.
-- Eventos de resolução ampliada têm média −15,0 min contra −8,5 min nos preferenciais, o que justifica manter o padrão em ≤20 min.
-- **Mudança no app:** acrescenta mediana e IC 95% (distribuição t) a cada média, barras de IC no gráfico, marcador vazado com menos de 10 pares. O IC supõe eventos independentes; eventos de dias seguidos são correlacionados, então ele é otimista.
+- Jan–jul (5 min): PM −15,3 ± 9,4 min (n = 264); BM +0,4 ± 9,4 min (n = 277).
+- Sizígia × quadratura: PM −1,9 min (t = −1,2, **não significativo**; a v1 indicava significância); BM +7,1 min (t = 4,6, **significativo**: a baixamar de sizígia atrasa cerca de 7 min em relação à de quadratura).
+- Variação sazonal da preamar: de −10 (janeiro) e −11 (julho) a −22 min (abril e maio).
+- **A anomalia de outubro da v1 (+14/+19 min) desapareceu**: vinha de 6 eventos com amostragem esparsa; agora, em ago–out, os eventos de resolução preferencial são 45 e as médias (PM −14,5; BM +1,8) não diferem de jan–jul dado o DP de 14–19 min. Com amostragem de 15–60 min o horário é incerto; use o modo ampliado com cautela.
+- 943 dos 1.001 pares têm suporte de até 65 min (586 preferenciais). Os 58 restantes (intervalos > 65 min) são excluídos.
 
-## 3. Série histórica
+## 5. Série histórica
 
-- Comparações out–dez de 2024 × 2025 reproduzidas: −30,2; −23,6; −23,1 cm.
-- Nova comparação 2026 × 2025 (meses completos nos dois anos): abril −6,5; maio −5,7; junho −7,0 cm. Janeiro, fevereiro, março e julho foram excluídos por serem parciais em algum dos anos (janeiro/fevereiro de 2025 e março/julho de 2026).
-- **Mudança no app:** cartões 2026 × 2025 e série diária sobreposta por dia do ano (antes os 643 dias estavam nos dados, mas sem uso).
+- Médias diárias por trapézios, exigindo cobertura de 24 h e maior intervalo ≤65 min (≥260 amostras e ≤60 min nos dias de 5 min, como na v1). Em teste de decimação o erro da média diária foi de ≈ 0,1 cm. Isso recupera 63 dias de 14/07 a 22/10/2026 e fecha out–dez/2024 com 31, 30 e 30 dias.
+- Out–dez de 2024 × 2025: −30,2; −23,6; −22,9 cm (dezembro de 2024 com 30/31 dias). Pré-07/11/2024 usa os dados da v1 (esta série começa em 07/11).
+- 2026 × 2025 em meses completos: abril −6,5; maio −5,7; junho −6,9 cm.
 
-## 4. Previsão
+## 6. O que continua em aberto
 
-- 1.411 extremos, alternando PM/BM sem falha; intervalo de 4,3 a 8,4 h (média 6,2 h); alturas de 0,13 a 3,58 m, dentro das faixas calibradas.
-- **Mudanças:** abre na data e hora atuais, mostra o próximo extremo, navegação por dia, vista de 7 dias e opção experimental de aplicar a defasagem média (por mês e tipo; meses com menos de 10 eventos usam a média de janeiro–julho). Sem validação independente, fica desligada por padrão.
-
-## 5. O que ainda depende dos dados brutos
-
-1. Reajuste dos coeficientes com intervalos de confiança (bootstrap por semana).
-2. Verificar deslocamento de relógio de agosto a outubro.
-3. Validar alturas intermediárias e a curva horária da previsão.
-4. Calibrar novembro e dezembro quando houver pares.
+1. O deslocamento de ≈ 5 min entre a v1 e esta série até 13/07/2026 e o verdadeiro referencial de relógio.
+2. Nivelamento independente da régua (o NR de 0,75 m é premissa).
+3. Tábua oficial em PDF: os extremos usados são os da v1; qualquer correção na tábua exige reprocessar.
+4. Novembro/dezembro: sem pares. Recalibrar quando houver dados.
+5. Validação das alturas intermediárias e da curva horária de Previsão com um segundo ano.

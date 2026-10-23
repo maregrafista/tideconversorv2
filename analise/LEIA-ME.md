@@ -1,0 +1,1 @@
+Scripts da reanálise (Python 3 com numpy e pandas). Ordem: `load.py` (lê a planilha RLS), `analysis.py` (extremos, pares, calibração, defasagens), `hist.py` (médias diárias), `build.py` (gera `data/data.js` e os CSV). Os caminhos de entrada (planilha, `data.json` da v1 com tábua e fases) são os da máquina onde rodaram; ajuste-os antes de repetir.
