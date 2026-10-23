@@ -1,0 +1,19 @@
+<section id="carta" class="panel" role="tabpanel" aria-labelledby="tab-carta" hidden>
+  <div class="sectionhead"><div><h2>Quadro de maré</h2><p class="sub">No formato das informações de maré das cartas náuticas · alturas em metros acima do NR</p></div><button class="chip noprint" id="cartaPrint" type="button">Imprimir / salvar PDF</button></div>
+  <article class="carta-box" aria-label="Informações de maré de Fazendinha">
+    <header class="carta-head"><span>INFORMAÇÕES DE MARÉ</span><b>ATALAIA DE FAZENDINHA</b><i>Lat 00°03,4′ S · Long 051°06,5′ W · Fuso UTC−03</i></header>
+    <div class="carta-grid">
+      <div>
+        <h3>Alturas da maré</h3>
+        <table class="carta-tab"><thead><tr><th>Nível</th><th>Sigla</th><th>Acima do NR (m)</th><th>Acima do zero da régua (m)</th></tr></thead><tbody id="cartaNiveis"></tbody></table>
+        <h3>Dados gerais</h3>
+        <table class="carta-tab" id="cartaGerais"><tbody></tbody></table>
+      </div>
+      <div><h3>Esquema dos níveis</h3><svg id="cartaSvg" role="img" aria-label="Esquema dos níveis de maré em relação ao NR" viewBox="0 0 520 400"></svg></div>
+    </div>
+    <h3>Constantes harmônicas principais</h3>
+    <table class="carta-tab carta-const"><thead><tr><th>Componente</th><th>Velocidade (°/h)</th><th>H (m)</th><th>G local UTC−3 (°)</th><th>G Greenwich (°)</th></tr></thead><tbody id="cartaConst"></tbody></table>
+    <p class="carta-note" id="cartaFonte"></p>
+  </article>
+  <p class="note">Alturas calculadas com as 113 constantes do PACMARÉ e o nível médio anual. O NR de trabalho é uma referência do Setor de Hidrografia da UNIPILOT e não substitui a Tábua de Marés nem as cartas oficiais da DHN, nem serve à navegação.</p>
+</section>

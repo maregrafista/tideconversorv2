@@ -49,7 +49,7 @@ function lagBadge(m) {
   return `A partir de 11/08/2026 o registrador passou a amostrar de forma irregular (15 a 60 min). Há ${n} eventos de resolução preferencial em ${HM[m - 1].toLowerCase()}; use "≤65 min · ampliado" com cautela, pois o horário do extremo é estimado por ajuste local.`;
 }
 /* ---------- abas ---------- */
-const PANELS = ['converter', 'lunar', 'history', 'forecast', 'compare'];
+const PANELS = ['converter', 'lunar', 'history', 'forecast', 'compare', 'carta'];
 function showPanel(name, push = true) {
   if (!PANELS.includes(name)) name = 'converter';
   PANELS.forEach(p => { $(p).hidden = p !== name; $('tab-' + p).setAttribute('aria-selected', p === name); $('tab-' + p).tabIndex = p === name ? 0 : -1; });

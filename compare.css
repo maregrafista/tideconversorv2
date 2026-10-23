@@ -28,3 +28,18 @@
 @media (max-width:860px){#compare .cmp-cards{grid-template-columns:1fr 1fr}}
 @media (max-width:480px){#compare .cmp-cards{grid-template-columns:1fr}}
 #compare [hidden]{display:none!important}
+/* Quadro de maré (carta náutica) */
+#carta .carta-box{background:var(--card,#fff);border:2px solid var(--forest,#173f35);outline:1px solid var(--forest,#173f35);outline-offset:3px;padding:18px 20px;margin:4px 4px 16px}
+#carta .carta-head{display:flex;flex-direction:column;gap:2px;text-align:center;border-bottom:2px solid var(--forest,#173f35);padding-bottom:10px;margin-bottom:12px}
+#carta .carta-head span{font-size:12px;letter-spacing:2.5px;color:var(--muted)}#carta .carta-head b{font:700 21px Georgia,serif;letter-spacing:.5px}#carta .carta-head i{font-size:12.5px;color:var(--muted);font-style:normal}
+#carta h3{font:700 12px system-ui,sans-serif;letter-spacing:1.4px;text-transform:uppercase;color:var(--forest,#173f35);margin:16px 0 6px}
+#carta .carta-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;align-items:start}
+#carta .carta-tab{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+#carta .carta-tab th,#carta .carta-tab td{padding:6px 8px;border:1px solid var(--line);text-align:right}#carta .carta-tab th{font-size:11px;font-weight:600;color:var(--muted);background:var(--sage,#eef)}
+#carta .carta-tab th:first-child,#carta .carta-tab td:first-child{text-align:left}#carta .carta-tab td:nth-child(2){text-align:center}
+#carta #cartaGerais td:last-child{text-align:left}#carta .carta-tab tr.ref td{border-top:2px solid var(--forest,#173f35);font-weight:600}
+#carta .carta-const td:nth-child(2){text-align:right}
+#carta #cartaSvg{width:100%;height:auto;display:block;max-width:520px}
+#carta .carta-note{font-size:12px;color:var(--muted);margin:12px 0 0}
+@media (max-width:760px){#carta .carta-grid{grid-template-columns:1fr}#carta .carta-tab{font-size:12.5px}#carta .carta-tab th,#carta .carta-tab td{padding:5px 5px}}
+@media print{body *{visibility:hidden!important}#carta,#carta *{visibility:visible!important}#carta{position:absolute;left:0;top:0;width:100%;display:block!important}.noprint{display:none!important}}
