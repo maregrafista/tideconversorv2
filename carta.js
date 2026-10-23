@@ -5,10 +5,15 @@
   if (!T || !$('carta')) return;
   const f = (v, d = 2) => v.toFixed(d).replace('.', ','), m = cm => f(cm / 100), NR = T.NR, q = T.quadro;
   const SP = [15, .5490165, .0410686, .0046418, .0000019], mod = a => ((a % 360) + 360) % 360;
-  const niveis = [['Preamar média de sizígia', 'PMS', q.MHWS], ['Preamar média de quadratura', 'PMQ', q.MHWN], ['Nível médio', 'NM', q.Zo],
-    ['Baixamar média de quadratura', 'BMQ', q.MLWN], ['Baixamar média de sizígia', 'BMS', q.MLWS]];
+  const niveis = [['Preamar média de sizígia', 'MHWS', q.MHWS], ['Preamar média de quadratura', 'MHWN', q.MHWN], ['Nível médio do mar', 'MSL', q.Zo],
+    ['Baixamar média de quadratura', 'MLWN', q.MLWN], ['Baixamar média de sizígia', 'MLWS', q.MLWS]];
   $('cartaNiveis').innerHTML = niveis.map(([n, s, v]) => `<tr><td>${n}</td><td>${s}</td><td>${m(v)}</td><td>${m(v + NR)}</td></tr>`).join('') +
     `<tr class="ref"><td>Nível de redução</td><td>NR</td><td>0,00</td><td>${f(NR / 100, 3)}</td></tr>`;
+  // quadro no formato das cartas: Lugar | Lat | Long | HWF&C | alturas em metros sobre o NR (1 casa decimal)
+  const f1 = v => (v / 100).toFixed(1).replace('.', ','), hwf = h => { const a = Math.floor(h), b = Math.round((h - a) * 60); return String(a).padStart(2, '0') + 'h' + String(b).padStart(2, '0') + 'min'; };
+  const ref = [['Macapá', "0°02'N", "51°02'W", '03h48min', ['2,8', '2,3', '0,7', '0,3', '1,5']], ['Companhia das Docas de Santana', "0°03'S", "51°10'W", '04h21min', ['3,0', '2,5', '0,8', '0,3', '1,6']]];
+  $('cartaCarta').innerHTML = `<tr class="faz"><td>Atalaia de Fazendinha</td><td>0°03,4'S</td><td>51°06,5'W</td><td>${hwf(q.HWFC_h)}</td>` + [q.MHWS, q.MHWN, q.MLWN, q.MLWS, q.Zo].map(v => `<td>${f1(v)}</td>`).join('') + '</tr>' +
+    ref.map(r => `<tr class="oficial"><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td>` + r[4].map(v => `<td>${v}</td>`).join('') + '</tr>').join('');
   const hw = q.HWFC_h, hh = Math.floor(hw), mm = Math.round((hw - hh) * 60);
   const gerais = [['Tipo de maré (critério de Courtier)', `Semidiurna: C = (K1 + O1)/(M2 + S2) = ${f(q.F, 2)}, dentro de 0 ≤ C ≤ 0,25`], ['Estabelecimento do porto (HWF&C)', `${hh} h ${String(mm).padStart(2, '0')} min`],
     ['Amplitude média de sizígia', `${m(q.MHWS - q.MLWS)} m`], ['Amplitude média de quadratura', `${m(q.MHWN - q.MLWN)} m`],
@@ -41,15 +46,15 @@
     ['Variação do nível médio', 'o rio desloca o nível médio ao longo do ano; Sa (21,6 cm) e Ssa (8,3 cm) já estão incluídas, mas anos secos ou cheios diferem']];
   $('cartaQual').innerHTML = qual.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
   // esquema dos níveis
-  const lv = [['PMS', q.MHWS], ['PMQ', q.MHWN], ['NM', q.Zo], ['BMQ', q.MLWN], ['BMS', q.MLWS], ['NR', 0], ['Zero da régua', -NR]];
+  const lv = [['MHWS', q.MHWS], ['MHWN', q.MHWN], ['MSL', q.Zo], ['MLWN', q.MLWN], ['MLWS', q.MLWS], ['NR', 0], ['Zero da régua', -NR]];
   const top = 20, bot = 380, hi = Math.max(q.MHWS) / 100 + .2, lo = -NR / 100 - .2, Y = v => top + (hi - v / 100) / (hi - lo) * (bot - top);
   let s = `<rect x="150" y="${Y(q.MHWS)}" width="90" height="${Y(-NR) - Y(q.MHWS)}" fill="var(--sage,#e6ece1)" stroke="var(--line,#ccc)"/>`;
   s += `<rect x="150" y="${Y(q.MLWS)}" width="90" height="${Y(0) - Y(q.MLWS)}" fill="none"/>`;
   s += `<text x="195" y="${(Y(q.MHWS) + Y(q.MLWS)) / 2 + 4}" text-anchor="middle" font-size="12" fill="var(--muted,#667)">faixa da maré</text>`;
   for (const [n, v] of lv) {
     const y = Y(v), ref = n === 'NR' || n === 'Zero da régua', col = ref ? '#a56c34' : 'var(--forest,#173f35)';
-    s += `<line x1="${ref ? 90 : 150}" x2="${ref ? 300 : 240}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="${ref ? 1.6 : 1.4}" ${n === 'Zero da régua' ? 'stroke-dasharray="5 3"' : ''}/>` +
-      `<text x="${ref ? 84 : 144}" y="${y + 4}" text-anchor="end" font-size="13" font-weight="600" fill="${col}">${n}</text>` +
+    s += `<line x1="${ref ? 104 : 150}" x2="${ref ? 300 : 240}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="${ref ? 1.6 : 1.4}" ${n === 'Zero da régua' ? 'stroke-dasharray="5 3"' : ''}/>` +
+      `<text x="${ref ? 98 : 144}" y="${y + 4}" text-anchor="end" font-size="13" font-weight="600" fill="${col}">${n}</text>` +
       `<text x="${ref ? 306 : 246}" y="${y + 4}" font-size="13" fill="var(--ink,#222)">${n === 'Zero da régua' ? '−' + f(NR / 100, 3) : m(v)} m</text>`;
   }
   s += `<text x="12" y="14" font-size="11" fill="var(--muted,#667)">altura acima do NR (m)</text>`;
