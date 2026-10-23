@@ -151,3 +151,40 @@ dialog::backdrop{background:rgba(10,20,15,.55)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media print{header,.topnav,.actions,.textbutton,footer{display:none}body{background:#fff}}
+
+.intro{background:var(--sage);border-radius:14px;padding:12px 16px;font-size:14px;margin:0 0 18px}
+.plain{font-size:15px;margin:14px 0 6px;font-weight:500}
+.plain-box{background:var(--sage);border-radius:14px;padding:12px 16px;margin:14px 0;font-size:14.5px}
+.plain-box p{margin:4px 0}
+.fc-pick{display:grid;grid-template-columns:1.3fr 1.2fr 1.2fr;gap:14px;margin-bottom:14px}
+.fc-hero{margin-bottom:20px}
+.bigsentence{font:22px/1.35 Georgia,serif;margin:0 0 16px;letter-spacing:-.3px}
+.fc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat{background:var(--sage);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.stat.pmstat{background:color-mix(in srgb,var(--pm) 14%,var(--card))}
+.stat.bmstat{background:color-mix(in srgb,var(--ochre) 14%,var(--card))}
+.stat .k{font-size:12px;color:var(--muted)}
+.stat .v{font:28px Georgia,serif;letter-spacing:-.6px}
+.stat .s{font-size:12.5px;color:var(--muted)}
+.fc-column{margin:14px 0 0;font-size:14px}
+.tidelist{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.tide{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.tide.next{border-color:var(--ochre);background:color-mix(in srgb,var(--ochre) 10%,var(--card))}
+.tide.past{opacity:.55}
+.tide b{display:block;font-size:13px}
+.tide .t{font:24px Georgia,serif}
+.tide .h{font-size:13px;color:var(--muted)}
+.adv .adv-body{display:grid;gap:14px;padding:4px 0 16px}
+.adv .check{margin:0}
+.gloss{max-width:1084px;margin:0 28px 10px}
+@media (min-width:1196px){.gloss{margin:0 auto 10px}}
+.gloss dl{margin:0 0 12px}.gloss dt{font-weight:600;margin-top:8px}.gloss dd{margin:2px 0 0;color:var(--muted);font-size:13.5px}
+@media (max-width:860px){.fc-stats{grid-template-columns:1fr}.fc-pick{grid-template-columns:1fr}}
+@media (max-width:600px){.gloss{margin:0 16px 10px}.bigsentence{font-size:19px}}
+
+.tide .t,.tide .h{display:block}
+.card,.converter-layout>*,.fc-pick>*,.fields>*{min-width:0}
+.inputbox input[type=date],.inputbox input[type=time]{min-width:0;width:100%}
+@media (max-width:860px){.converter-layout{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:600px){.fields,.fc-pick{grid-template-columns:minmax(0,1fr)}}
+html,body{overflow-x:hidden}

@@ -36,6 +36,7 @@
     <button class="textbutton" data-method="converter">Método</button>
   </div>
 
+  <p class="intro">Passa uma altura entre a <b>régua de Fazendinha</b> e a <b>tábua de marés de Santana</b>. Digite o valor, escolha o sentido e a data: o app mostra o nível acima do <b>NR</b> (nível de redução) e o valor equivalente do outro lado. A relação muda um pouco ao longo do ano, por isso a data importa.</p>
   <div class="converter-layout">
     <div class="card">
       <div class="seg" role="group" aria-label="Referência da entrada">
@@ -71,7 +72,9 @@
           <div class="hint" id="equivNote"></div>
         </div>
       </div>
+      <p class="plain" id="plain" aria-live="polite"></p>
       <div class="rangebar" id="rangebar" aria-hidden="true"></div>
+      <p class="note" id="rangeNote"></p>
       <div class="actions">
         <button class="textbutton" id="copyResult">Copiar resultado</button>
         <button class="textbutton" id="swapMode">⇄ Inverter sentido</button>
@@ -91,12 +94,7 @@
     </div>
   </div>
 
-  <div class="card" style="margin-top:20px">
-    <div class="chart-head"><div><h3>Reta de calibração da data</h3><p class="sub" id="calibSub"></p></div></div>
-    <div class="plotwrap"><svg class="chart" id="calibChart" viewBox="0 0 920 300" role="img" aria-label="Reta de calibração da régua para a tábua"></svg></div>
-  </div>
-
-  <details id="calibDetails"><summary>Entenda a calibração</summary>
+  <details id="calibDetails" class="method"><summary>Entenda a calibração</summary>
     <p id="calibText"></p>
     <div class="calibration" id="model"></div>
     <div class="tablewrap"><table id="modelTable"><caption>Ajustes mensais de referência · T = a + b·R · [IC 95% de b por reamostragem de semanas]</caption>
@@ -112,6 +110,7 @@
     <div><h2>Diferenças de horário</h2><p class="sub">Observações de Fazendinha − previsão da tábua de Santana · jan–out/2026</p></div>
     <div class="section-actions"><button class="textbutton" id="exportCSV">Exportar CSV</button><button class="textbutton" data-method="lunar">Método</button></div>
   </div>
+  <p class="intro">Mostra se a maré chega em Fazendinha <b>antes</b> ou <b>depois</b> do horário que a tábua prevê para Santana. Valor negativo = antes; positivo = depois. Compara-se separadamente a <b>preamar</b> (maré cheia) e a <b>baixamar</b> (maré seca), e as fases da Lua: <b>sizígia</b> (lua nova e cheia, marés maiores) e <b>quadratura</b> (quartos, marés menores).</p>
   <div class="card lunar-toolbar">
     <div><label class="label" for="lunarMonth">Mês para explorar</label><select id="lunarMonth"></select></div>
     <div><label class="label" for="window">Janela lunar</label>
@@ -128,6 +127,7 @@
 
   <div id="lunarSummary" class="subview">
     <div class="phasegrid" id="phaseCards" aria-live="polite"></div>
+    <div class="plain-box" id="lunarPlain" aria-live="polite"></div>
     <div class="sign-note"><span class="pill">− antes da previsão</span><span class="pill">+ depois da previsão</span><span class="pill">minutos</span><span class="pill">IC 95% da média</span></div>
     <p class="note" id="phaseNote"></p>
     <div class="calendar" id="calendar"></div>
@@ -153,7 +153,7 @@
       <tbody id="summaryTable"></tbody></table></div>
   </div>
 
-  <details><summary>Método e limitações</summary>
+  <details class="method"><summary>Método e limitações</summary>
     <p><b>Diferença temporal = horário do extremo observado em Fazendinha − horário previsto na tábua de Santana.</b> São médias dos pares, separadas por mês do evento oficial, tipo de extremo e ciclo; não são a diferença entre horários médios calculados separadamente. Subtrair o NR não altera a defasagem.</p>
     <p>Sizígia: janela em torno de Lua nova ou cheia. A partir de 11/08/2026 a amostragem do registrador é irregular, e o horário do extremo passa a ser estimado por ajuste parabólico local (erro típico ≈ 11 min em teste de decimação). Quadratura: em torno dos quartos. Eventos fora da janela não entram. Extremos detectados por segmento com proeminência de 0,50 m; pareamento um a um do mesmo tipo, distância máxima de 180 min. Suporte padrão ≤20 min e patamar ≤40 min; ampliado ≤65 min. Após a recontagem, 1.001 pares PM/BM; 943 com suporte de até 65 min.</p>
     <p>O IC 95% usa a distribuição t sobre os eventos e supõe independência entre eles; com eventos de dias consecutivos isso é otimista. DP descreve a dispersão dos eventos, não a incerteza da média. Os relógios foram mantidos conforme os arquivos, sem deslocamento inferido.</p>
@@ -166,6 +166,7 @@
     <div><h2>Série histórica</h2><p class="sub">Nível médio em Fazendinha · out/2024 a out/2026</p></div>
     <div class="section-actions"><button class="textbutton" id="exportHistory">Exportar CSV</button><button class="textbutton" data-method="history">Método</button></div>
   </div>
+  <p class="intro">Nível médio da água em Fazendinha, dia a dia e mês a mês, desde outubro de 2024. Serve para ver se o ano está mais cheio ou mais seco que o anterior. <b>2024</b> teve seca extrema, por isso é mostrado à parte.</p>
   <div class="history-toolbar">
     <div class="subnav" role="group" aria-label="Visualização" id="historyNav">
       <button class="chip" data-view="historySummary" aria-pressed="true">Comparar</button>
@@ -207,7 +208,7 @@
       <thead><tr><th>Mês</th><th>2024</th><th>2025</th><th>2026</th></tr></thead><tbody id="historyTable"></tbody></table></div>
   </div>
 
-  <details><summary>Dados históricos</summary>
+  <details class="method"><summary>Dados históricos</summary>
     <p>2024 aparece separado por ter ocorrido seca extrema regional; 2025 é um comparador, não normal climatológica. As médias diárias exigem ≥260 amostras e intervalo máximo no dia ≤60 min. Médias mensais dão peso igual a cada dia qualificado; meses parciais são identificados.</p>
     <p>Comparação out–dez de 2024 × 2025: dezembro de 2024 tem 30 de 31 dias (*). Fonte: série RLS de Fazendinha (atalaia-fazendinha-rls.xls) a partir de 07/11/2024; de 01/10 a 06/11/2024 usam-se os dados da v1. Dias com amostragem esparsa (após 11/08/2026) entram quando o maior intervalo é ≤65 min, pela média temporal (trapézios); em teste de decimação o erro foi de ≈0,1 cm. Cada dia exige cobertura completa; 22 pontos espúrios foram removidos.</p>
     <p>Contexto da seca: <a href="https://www.sgb.gov.br/sala-de-imprensa/-/asset_publisher/ujyx/content/monitoramento-hidrologico-permite-acompanhar-evolucao-da-estiagem-na-regiao-norte" target="_blank" rel="noopener">SGB/CPRM</a>.</p>
@@ -217,47 +218,72 @@
 <!-- ============ PREVISÃO ============ -->
 <section id="forecast" class="panel" role="tabpanel" aria-labelledby="tab-forecast" hidden>
   <div class="sectionhead">
-    <div><h2>Previsão de nível</h2><p class="sub">Tábua de Santana 2026 · interpolação cossenoidal</p></div>
-    <div class="section-actions"><button class="textbutton" id="exportForecast">Exportar CSV</button><button class="textbutton" data-method="forecast">Método</button></div>
+    <div><h2>Previsão da maré</h2><p class="sub">Quanto a água estará acima do NR, e quando ocorrem preamar e baixamar</p></div>
+    <button class="textbutton" data-method="forecast">Como é calculado</button>
   </div>
+  <p class="intro">Escolha o <b>local</b>, o <b>dia</b> e a <b>hora</b>. O app mostra o nível previsto naquele momento e os horários das marés do dia. A previsão vem da tábua de marés de Santana de 2026.</p>
 
-  <div class="card forecast-controls">
-    <div><label class="label" for="forecastLocation">Local</label>
-      <select id="forecastLocation"><option value="faz">Fazendinha (NR)</option><option value="san">Porto de Santana (tábua)</option></select></div>
-    <div><label class="label" for="forecastDate">Data</label>
+  <div class="card fc-pick">
+    <div><label class="label" for="forecastLocation">1 · Local</label>
+      <select id="forecastLocation"><option value="faz">Fazendinha (nível acima do NR)</option><option value="san">Porto de Santana (altura da tábua)</option></select></div>
+    <div><label class="label" for="forecastDate">2 · Dia</label>
       <div class="inputbox"><button class="step" id="dayPrev" type="button" aria-label="Dia anterior">‹</button><input type="date" id="forecastDate" min="2026-01-01" max="2026-12-31"><button class="step" id="dayNext" type="button" aria-label="Próximo dia">›</button></div></div>
-    <div><label class="label" for="forecastTime">Hora (UTC−03)</label>
+    <div><label class="label" for="forecastTime">3 · Hora (Brasília)</label>
       <div class="inputbox"><input type="time" id="forecastTime"><button class="step wide" id="nowBtn" type="button">Agora</button></div></div>
-    <div><label class="label" for="forecastDepth">Profundidade ao NR (m, opcional)</label>
-      <div class="inputbox"><input id="forecastDepth" inputmode="decimal" placeholder="ex.: 6,50" autocomplete="off"><span>m</span></div></div>
   </div>
-  <label class="check"><input type="checkbox" id="lagToggle"> Aplicar defasagem média de horário observada em Fazendinha (experimental, não validada)</label>
 
   <div class="warning" id="forecastWarning" role="status" hidden></div>
 
-  <div class="results forecast-results" aria-live="polite">
-    <div class="result"><h3 id="forecastLocalLabel">Nível</h3><div class="number" id="forecastLevel">—</div><div class="hint">Nível acima do NR</div></div>
-    <div class="result water"><h3>Coluna d’água</h3><div class="number" id="forecastColumn">—</div><div class="hint" id="forecastEquation"></div></div>
-    <div class="result next"><h3>Próximo extremo</h3><div class="number" id="nextEvent">—</div><div class="hint" id="nextEventNote"></div></div>
+  <div class="card fc-hero" aria-live="polite">
+    <p class="bigsentence" id="fcSentence">—</p>
+    <div class="fc-stats">
+      <div class="stat"><span class="k">Nível neste horário</span><span class="v" id="fcLevel">—</span><span class="s" id="fcTrend"></span></div>
+      <div class="stat pmstat"><span class="k">▲ Próxima preamar (maré cheia)</span><span class="v" id="fcNextPM">—</span><span class="s" id="fcNextPMs"></span></div>
+      <div class="stat bmstat"><span class="k">▼ Próxima baixamar (maré seca)</span><span class="v" id="fcNextBM">—</span><span class="s" id="fcNextBMs"></span></div>
+    </div>
+    <p class="fc-column" id="fcColumn" hidden></p>
   </div>
 
-  <div class="subnav" role="group" aria-label="Visualização">
-    <button class="chip" data-fview="curve" aria-pressed="true">Curva do dia</button>
-    <button class="chip" data-fview="events" aria-pressed="false">Preamares e baixamares</button>
-    <button class="chip" data-fview="week" aria-pressed="false">7 dias</button>
+  <div class="card">
+    <h3>Marés do dia</h3>
+    <div class="tidelist" id="tideList"></div>
   </div>
-  <div id="forecastCurveView" class="card"><div class="plotwrap"><svg class="chart" id="forecastChart" viewBox="0 0 920 250" role="img" aria-label="Curva de maré do dia"></svg></div><p class="note">Clique ou toque na curva para escolher o horário.</p></div>
-  <div id="forecastEventsView" class="card" hidden><div class="tablewrap"><table><thead><tr><th>Tipo</th><th>Hora</th><th id="forecastTableLevel">NR (m)</th><th>Coluna (m)</th></tr></thead><tbody id="forecastEventRows"></tbody></table></div></div>
-  <div id="forecastWeekView" class="card" hidden><div class="plotwrap"><svg class="chart" id="weekChart" viewBox="0 0 920 260" role="img" aria-label="Previsão de sete dias"></svg></div></div>
 
-  <details><summary>Método da previsão</summary>
-    <p>A aba usa os 1.411 extremos da tábua de Santana de 2026. Entre extremos consecutivos usa interpolação cossenoidal, T = T0 + (T1 − T0)·[1 − cos(π·u)]/2, que passa pelos extremos mas não é previsão harmônica oficial. Não se extrapola além da série.</p>
-    <p>Em Fazendinha, H = (T − a)/b − 0,75 com o ajuste local da data. Sem a opção de defasagem, os horários PM/BM são os de Santana. Com a opção, os extremos são deslocados pela defasagem média do mês e tipo (eventos de resolução preferencial; meses com menos de 10 pares usam a média de janeiro–julho). Essa correção não tem validação independente.</p>
-    <p>A coluna d’água só é calculada com profundidade local informada, referida ao mesmo NR: coluna = profundidade + nível. Ao trocar de local a profundidade é apagada. Depois do último par observado (23/10/2026) o app repete a calibração mais recente e avisa que é extrapolação.</p>
+  <div class="card" style="margin-top:20px">
+    <h3>Curva do dia</h3>
+    <div class="plotwrap"><svg class="chart" id="forecastChart" viewBox="0 0 920 250" role="img" aria-label="Curva de maré do dia"></svg></div>
+    <p class="note">Toque ou clique na curva para escolher a hora. A linha pontilhada é a hora atual; o ponto laranja, o horário escolhido.</p>
+  </div>
+
+  <details class="adv"><summary>Opções avançadas</summary>
+    <div class="adv-body">
+      <div><label class="label" for="forecastDepth">Profundidade do local ao NR (opcional)</label>
+        <div class="inputbox"><input id="forecastDepth" inputmode="decimal" placeholder="ex.: 6,50" autocomplete="off"><span>m</span></div>
+        <p class="note">Se você souber a profundidade do fundo medida a partir do NR, o app calcula a coluna d’água (profundidade + nível).</p></div>
+      <label class="check"><input type="checkbox" id="lagToggle"> Ajustar os horários pela defasagem média observada em Fazendinha <small>(experimental: a preamar tende a ocorrer ~15 min antes da prevista em Santana)</small></label>
+      <button class="textbutton" id="exportForecast">Baixar o dia em CSV (a cada 15 min)</button>
+    </div>
+  </details>
+
+  <details class="method"><summary>Como a previsão é calculada</summary>
+    <p>A tábua de Santana dá apenas a hora e a altura de cada preamar e baixamar (1.411 no ano). Entre dois extremos seguidos, o app desenha uma curva suave em forma de cosseno, que passa exatamente pelos dois extremos. Não é a previsão harmônica oficial e não se estende além do que a tábua cobre.</p>
+    <p>Para Fazendinha, cada altura de Santana é convertida em leitura da régua com a calibração da data e depois reduzida em 0,75 m para dar o nível acima do NR. Os horários continuam sendo os de Santana, a menos que você ative o ajuste de defasagem.</p>
+    <p>Esses níveis intermediários e os horários locais não têm validação independente. O erro típico da conversão nos extremos é de cerca de 8 cm. Depois do último par observado (23/10/2026) a calibração é repetida e o app avisa.</p>
   </details>
 </section>
 </main>
 
+<details class="gloss"><summary>Glossário: o que significam esses termos?</summary>
+  <dl>
+    <dt>Régua (R)</dt><dd>Leitura da régua física de Fazendinha, em metros acima do zero da própria régua.</dd>
+    <dt>NR</dt><dd>Nível de redução, a referência de profundidade. Aqui, NR = leitura da régua − 0,75 m.</dd>
+    <dt>Tábua de Santana</dt><dd>Altura da maré prevista na tábua oficial do Porto de Santana.</dd>
+    <dt>Preamar (PM) e baixamar (BM)</dt><dd>Momento de maré mais cheia e de maré mais seca.</dd>
+    <dt>Sizígia e quadratura</dt><dd>Sizígia: lua nova e cheia, marés de maior amplitude. Quadratura: quartos de lua, marés de menor amplitude.</dd>
+    <dt>Defasagem</dt><dd>Diferença de horário: hora observada em Fazendinha menos hora prevista em Santana.</dd>
+    <dt>Erro típico</dt><dd>O quanto, em média, a conversão costuma errar quando testada em semanas que não participaram do ajuste. Não é um intervalo de confiança.</dd>
+  </dl>
+</details>
 <footer>
   <p>Desenvolvido pelo Setor de Hidrografia da UNIPILOT · Dados de calibração de 2026 · Não substitui a Tábua de Marés oficial da DHN nem serve à navegação.</p>
   <p><button class="textbutton" id="installOffline" hidden>Instalar</button> <a href="README.md">Documentação</a> · <a href="ANALISE.md">Reanálise dos dados</a></p>
