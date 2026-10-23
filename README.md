@@ -3,6 +3,7 @@
 Conversão entre a régua de Fazendinha e a tábua de Porto de Santana, horários, série histórica, **previsão harmônica com componentes anuais** e **comparação previsto × observado**. Setor de Hidrografia da UNIPILOT. Aplicativo estático (HTML, CSS e JS), funciona offline após a primeira visita.
 
 ## Novidades da v2.2 (23/10/2026)
+- **Previsto × observado refeito:** visão geral de todo o registro (média diária, clique para escolher o período), resumo do erro de todo o registro, só do teste independente e do ajuste, curvas e pontos (preamares e baixamares observadas e previstas) no lugar de barras, erro de altura em pontos e curvas, erro mês a mês em pontos e curva, tabela com todas as 2.088 marés e CSV do período ou de todo o registro.
 - **Aba Quadro de maré:** informações de maré no formato das cartas náuticas (alturas PMS, PMQ, NM, BMQ e BMS acima do NR e do zero da régua, esquema dos níveis, tipo de maré, estabelecimento do porto, amplitudes e constantes harmônicas principais), com botão para imprimir ou salvar em PDF.
 - **Constantes do PACMARÉ:** a previsão de Fazendinha passou a usar as **113 constantes harmônicas geradas pelo PACMARÉ** para o bloco 02 (arquivos `AH_02` e `CH_B02`), incluindo Sa (21,6 cm) e Ssa (8,3 cm), no lugar das 57 do ajuste próprio. O erro caiu em todos os blocos (tabela abaixo). Quadro de marés, preamares/baixamares e curva previsto × observado foram recalculados. O NR foi alinhado às novas constantes: **66,3 cm** (era 66,7 cm).
 

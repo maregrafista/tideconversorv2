@@ -1,10 +1,15 @@
 <section id="compare" class="panel" role="tabpanel" aria-labelledby="tab-compare" hidden>
   <div class="sectionhead">
     <div><h2>Previsto × observado</h2><p class="sub">A previsão acertou? Compare com o que a régua de Fazendinha registrou.</p></div>
-    <button class="textbutton" id="cmpCsv">Baixar este período (CSV)</button>
+    <div class="cmp-dl"><button class="textbutton" id="cmpCsv">Baixar este período (CSV)</button><button class="textbutton" id="cmpCsvAll">Baixar todas as marés (CSV)</button></div>
   </div>
 
-  <p class="intro">A <b>linha preta</b> é o nível que a régua registrou. A <b>linha verde</b> é o que a previsão dizia. Quanto mais coladas, melhor. Embaixo, as <b>barras</b> mostram a diferença de altura em cada preamar e baixamar (só elas entram no cálculo do erro): laranja = previsão mais alta que a água, azul = mais baixa.</p>
+  <p class="intro">Em cima, <b>todo o registro</b> da régua (média de cada dia). Embaixo, o <b>período escolhido</b> em detalhe: a <b>curva preta</b> é o nível que a régua registrou e a <b>curva verde</b>, o que a previsão dizia. Os <b>pontos</b> marcam as preamares e baixamares: preto = observado, verde vazado = previsto. O erro é medido só nesses pontos.</p>
+
+  <div class="card"><h3>Todo o registro</h3><p class="sub">Média diária do nível, de nov/2024 a hoje. A faixa marrom é o período mostrado abaixo; toque no gráfico para mudar de lugar. A área cinza é o período usado no ajuste.</p>
+    <canvas id="cmpOv" height="150" aria-label="Nível médio diário observado e previsto em todo o registro"></canvas>
+    <div class="cmp-legend"><span><i style="background:var(--ink,#1c1c1c)"></i>Observado</span><span><i style="background:#1b9664"></i>Previsto</span></div>
+    <div class="cmp-cards cmp-cards3" id="cmpSummary"></div></div>
 
   <div class="card cmp-pick">
     <span class="label">1 · Escolha o que quer ver</span>
@@ -22,19 +27,19 @@
   <p class="cmp-verdict" id="cmpVerdict" aria-live="polite"></p>
 
   <div class="card">
-    <div class="cmp-legend"><span><i style="background:#1c1c1c"></i>Observado (régua)</span><span><i style="background:#1b9664"></i>Previsto</span><span><i style="background:#eb6834"></i>previsto acima</span><span><i style="background:#3a7bd5"></i>previsto abaixo</span></div>
+    <div class="cmp-legend"><span><i style="background:var(--ink,#1c1c1c)"></i>Observado (curva)</span><span><i style="background:#1b9664"></i>Previsto (curva)</span><span><i class="dot" style="background:var(--ink,#1c1c1c)"></i>PM/BM observada</span><span><i class="dot ring"></i>PM/BM prevista</span><span><i class="dot" style="background:#eb6834"></i>erro nas preamares</span><span><i class="tri" style="color:#3a7bd5"></i>erro nas baixamares</span><span><i class="gap"></i>sem registro</span></div>
     <div class="cmp-chart" id="cmpWrap">
       <canvas id="cmpMain" height="300" aria-label="Nível observado e previsto"></canvas>
       <canvas id="cmpErr" height="130" aria-label="Diferença de altura nas preamares e baixamares"></canvas>
       <div class="cmp-cursor" id="cmpCursor" hidden></div><div class="cmp-tip" id="cmpTip" hidden></div>
     </div>
-    <p class="note">Escala fixa: altura em metros acima do NR (eixo de cima) e diferença em centímetros (eixo de baixo), a mesma em todos os períodos, para comparar um período com outro.</p>
+    <p class="note">Escala fixa: altura em metros acima do NR (gráfico de cima) e erro de altura em centímetros (gráfico de baixo: acima de zero = previsão mais alta que a água). As escalas são as mesmas em todos os períodos.</p>
   </div>
 
   <div class="cmp-cards" id="cmpCards" aria-live="polite"></div>
-  <div class="card"><h3>Preamares e baixamares neste período</h3><p class="sub">A hora e a altura em que a água realmente chegou ao máximo e ao mínimo, contra o que a previsão dizia.</p><div class="tablewrap"><table id="cmpEvents"></table></div></div>
+  <div class="card"><div class="cmp-evhead"><h3 id="cmpEvTitle">Preamares e baixamares neste período</h3><button class="chip" id="cmpAll" type="button">Ver todas as marés do registro</button></div><p class="sub">A hora e a altura em que a água realmente chegou ao máximo e ao mínimo, contra o que a previsão dizia.</p><div class="tablewrap"><table id="cmpEvents"></table></div></div>
 
-  <div class="card"><h3>E nos outros meses?</h3><p class="sub">Erro típico de altura nas preamares e baixamares de cada mês. Toque em uma barra para ver aquele mês.</p><canvas id="cmpMonths" height="190" aria-label="Erro típico por mês"></canvas>
+  <div class="card"><h3>E nos outros meses?</h3><p class="sub">Erro típico de altura nas preamares e baixamares de cada mês. Toque em um ponto para ver aquele mês.</p><canvas id="cmpMonths" height="190" aria-label="Erro típico por mês"></canvas>
     <div class="cmp-legend"><span><i style="background:#1b9664"></i>teste independente (dados não usados no ajuste)</span><span><i style="background:#9aa39c"></i>dados usados no ajuste (erro menor, não é um teste)</span><span><i style="background:#d9a441"></i>registro irregular (após 11/08/2026)</span></div></div>
 
   <details><summary>Como ler estes números</summary>

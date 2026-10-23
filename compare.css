@@ -43,3 +43,12 @@
 #carta .carta-note{font-size:12px;color:var(--muted);margin:12px 0 0}
 @media (max-width:760px){#carta .carta-grid{grid-template-columns:1fr}#carta .carta-tab{font-size:12.5px}#carta .carta-tab th,#carta .carta-tab td{padding:5px 5px}}
 @media print{body *{visibility:hidden!important}#carta,#carta *{visibility:visible!important}#carta{position:absolute;left:0;top:0;width:100%;display:block!important}.noprint{display:none!important}}
+/* pontos e curvas */
+#compare .cmp-dl{display:flex;gap:16px;flex-wrap:wrap}
+#compare .cmp-cards3{grid-template-columns:repeat(3,1fr);margin:14px 0 0}
+@media (max-width:760px){#compare .cmp-cards3{grid-template-columns:1fr}}
+#compare .cmp-evhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}#compare .cmp-evhead h3{margin:0}
+#compare .cmp-legend i.dot{border-radius:50%;width:10px;height:10px}#compare .cmp-legend i.ring{background:transparent;border:2px solid #1b9664}
+#compare .cmp-legend i.tri{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid currentColor;border-radius:0;background:none}
+#compare .cmp-legend i.gap{background:rgba(150,160,150,.3)}
+#compare #cmpOv{cursor:pointer}
