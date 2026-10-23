@@ -48,16 +48,17 @@
   function show() { if (!built) build(); else render(); }
 
   /* ---------- estatísticas da janela ---------- */
-  function stats(i0, i1) {
-    const p = pred(); let n = 0, sp = 0, sq = 0; const ab = [];
-    for (let i = i0; i < i1; i++) { const e = p[i] - V[i]; n++; sp += e; sq += e * e; ab.push(Math.abs(e)); }
+  /* o erro é medido só nas preamares e baixamares: altura prevista − altura observada (cm) */
+  function stats(ev) {
+    let n = 0, sp = 0, sq = 0; const ab = [];
+    for (const v of ev) { const e = v.prev - v.obs; n++; sp += e; sq += e * e; ab.push(Math.abs(e)); }
     if (!n) return null; ab.sort((a, b) => a - b); return { n, bias: sp / n, rmse: Math.sqrt(sq / n), p90: ab[Math.floor(.9 * (n - 1))] };
   }
   const events = (t0, t1) => TCH.ev.map(e => ({ t: EPOCH + (e[0] + 180) * 6e4, type: e[1] ? 'Baixamar' : 'Preamar', obs: e[2] / 10, prev: e[3] / 10, dt: e[4] })).filter(e => e.t >= t0 && e.t < t1);
   const rating = r => r <= 10 ? 'muito boa' : r <= 15 ? 'boa' : r <= 25 ? 'razoável' : 'fraca';
 
   function render() {
-    const t0 = start, t1 = start + len * DAY, i0 = lb(t0), i1 = lb(t1), s = stats(i0, i1), ev = events(t0, t1);
+    const t0 = start, t1 = start + len * DAY, i0 = lb(t0), i1 = lb(t1), ev = events(t0, t1), s = stats(ev);
     $('cmpDate').value = iso(t0); $('cmpDate').min = iso(first); $('cmpDate').max = iso(last);
     document.querySelectorAll('#cmpPresets [data-p]').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === active));
     document.querySelectorAll('#cmpLen [data-d]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.d === len));
@@ -66,18 +67,18 @@
     const tag = $('cmpTag'); tag.className = 'cmp-tag ' + (sparse ? 'sparse' : fit ? 'fit' : 'test');
     tag.textContent = (fit ? 'Período usado no ajuste da previsão: o erro aqui é menor do que seria em dados novos.' : 'Período de teste: estes dados não foram usados para ajustar a previsão. É o teste mais honesto.') +
       (drought ? ' Em 2024 houve seca extrema: o rio estava bem abaixo do normal.' : '') + (sparse ? ' Depois de 11/08/2026 a régua grava de forma irregular, com menos horas.' : '');
-    if (!s) { $('cmpCards').innerHTML = ''; $('cmpVerdict').textContent = 'Sem observações neste período. Escolha outro.'; }
+    if (!s) { $('cmpCards').innerHTML = ''; $('cmpVerdict').textContent = 'Sem preamares e baixamares observadas neste período. Escolha outro.'; }
     else {
       const evT = ev.length ? ev.reduce((a, e) => a + Math.abs(e.dt), 0) / ev.length : null;
       const bTxt = Math.abs(s.bias) < 1 ? 'sem tendência de ficar acima ou abaixo da água' : `a previsão ficou, em média, ${fmt(Math.abs(s.bias))} cm ${s.bias > 0 ? 'acima' : 'abaixo'} da água`;
       $('cmpCards').innerHTML = [
-        ['Erro típico', `${fmt(s.rmse)} <small>cm</small>`, 'diferença típica entre o previsto e o observado'],
+        ['Erro típico', `${fmt(s.rmse)} <small>cm</small>`, 'diferença típica de altura entre as preamares e baixamares previstas e observadas'],
         ['Tendência', `${sgn(s.bias)} <small>cm</small>`, bTxt],
-        ['9 em cada 10 horas', `&lt; ${fmt(s.p90)} <small>cm</small>`, 'o erro foi menor que isso em 90 % das horas'],
+        ['9 em cada 10 marés', `&lt; ${fmt(s.p90)} <small>cm</small>`, 'o erro de altura foi menor que isso em 90 % das preamares e baixamares'],
         ['Horário da maré', evT === null ? '—' : `${fmt(evT)} <small>min</small>`, evT === null ? 'sem preamar ou baixamar completa neste período' : `diferença média entre a hora prevista e a observada (${ev.length} marés)`]
       ].map(c => `<div class="cmp-card"><div class="k">${c[0]}</div><div class="v">${c[1]}</div><div class="s">${c[2]}</div></div>`).join('');
       const why = Math.abs(s.bias) >= 10 ? ` O nível médio da água estava diferente do usual (rio ${s.bias > 0 ? 'mais baixo' : 'mais alto'} que o esperado), e isso explica boa parte do erro.` : '';
-      $('cmpVerdict').innerHTML = `Nestes ${len} dias (${fmt(s.n)} horas) a previsão foi <b>${rating(s.rmse)}</b>: errou em média ${fmt(s.rmse)} cm.${why}`;
+      $('cmpVerdict').innerHTML = `Nestes ${len} dias (${fmt(s.n)} preamares e baixamares) a previsão foi <b>${rating(s.rmse)}</b>: errou em média ${fmt(s.rmse)} cm na altura.${why}`;
     }
     sizeCanvases(); drawMain(i0, i1, t0, t1); drawErr(i0, i1, t0, t1); table(ev); drawMonths();
     $('cmpCursor').hidden = true; $('cmpTip').hidden = true;
@@ -114,8 +115,8 @@
     x.font = '11px system-ui'; x.strokeStyle = grid; x.fillStyle = txt; x.textAlign = 'right';
     for (const v of [-60, -30, 0, 30, 60]) { x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(w - R, Y(v)); x.stroke(); x.fillText((v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + ' cm', L - 6, Y(v) + 4); }
     for (let t = t0; t < t1; t += DAY) { x.beginPath(); x.moveTo(X(t), Tp); x.lineTo(X(t), Tp + ph); x.stroke(); }
-    const bw = Math.max(1, pw / (len * 24) * .85);
-    for (let i = i0; i < i1; i++) { const e = Math.max(-Y_ERR, Math.min(Y_ERR, p[i] - V[i])); x.fillStyle = e > 0 ? ORANGE : BLUE; const y0 = Y(0), y1 = Y(e); x.fillRect(X(T[i]) - bw / 2, Math.min(y0, y1), bw, Math.max(1, Math.abs(y1 - y0))); }
+    const bw = Math.max(3, Math.min(10, pw / (len * 2) * .5));
+    for (const v of events(t0, t1)) { const e = Math.max(-Y_ERR, Math.min(Y_ERR, v.prev - v.obs)); x.fillStyle = e > 0 ? ORANGE : BLUE; const y0 = Y(0), y1 = Y(e); x.fillRect(X(v.t) - bw / 2, Math.min(y0, y1), bw, Math.max(1, Math.abs(y1 - y0))); }
     x.strokeStyle = txt; x.lineWidth = 1; x.beginPath(); x.moveTo(L, Y(0)); x.lineTo(w - R, Y(0)); x.stroke();
   }
   /* cursor e dica: elementos HTML, sem redesenhar os gráficos */
@@ -139,9 +140,9 @@
   /* ---------- erro mês a mês (escala fixa) ---------- */
   const mx = { L: 46, bw: 1 };
   function monthsData() {
-    if (month) return month; const p = pred(), acc = new Map();
-    for (let i = 0; i < N; i++) { const d = loc(T[i]), k = d.getUTCFullYear() * 12 + d.getUTCMonth(), e = p[i] - V[i]; let a = acc.get(k); if (!a) acc.set(k, a = { y: d.getUTCFullYear(), m: d.getUTCMonth(), n: 0, sq: 0, fit: 0, t0: Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) + 3 * H3 }); a.n++; a.sq += e * e; if (inFit(T[i])) a.fit++; }
-    const list = [...acc.values()].filter(a => a.n >= 48).map(a => ({ ...a, rmse: Math.sqrt(a.sq / a.n), kind: a.t0 >= SPARSE - 11 * DAY ? 'sparse' : a.fit / a.n > .5 ? 'fit' : 'test' }));
+    if (month) return month; const acc = new Map();
+    for (const v of events(-Infinity, Infinity)) { const d = loc(v.t), k = d.getUTCFullYear() * 12 + d.getUTCMonth(), e = v.prev - v.obs; let a = acc.get(k); if (!a) acc.set(k, a = { y: d.getUTCFullYear(), m: d.getUTCMonth(), n: 0, sq: 0, fit: 0, t0: Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) + 3 * H3 }); a.n++; a.sq += e * e; if (inFit(v.t)) a.fit++; }
+    const list = [...acc.values()].filter(a => a.n >= 10).map(a => ({ ...a, rmse: Math.sqrt(a.sq / a.n), kind: a.t0 >= SPARSE - 11 * DAY ? 'sparse' : a.fit / a.n > .5 ? 'fit' : 'test' }));
     return (month = { list });
   }
   const MN = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -158,9 +159,9 @@
     });
   }
   function exportCsv() {
-    const i0 = lb(start), i1 = lb(start + len * DAY), p = pred(); let csv = '﻿Data_hora_UTC-3;Observado_m_acima_NR;Previsto_m_acima_NR;Erro_cm (previsto - observado)\r\n';
-    for (let i = i0; i < i1; i++) csv += [`${iso(T[i])} ${hm(T[i])}`, A.fmt(m_(V[i]), 3), A.fmt(m_(p[i]), 3), A.fmt(p[i] - V[i], 1)].join(';') + '\r\n';
-    A.download(csv, 'text/csv;charset=utf-8', `Previsto_x_Observado_${iso(start)}_${len}dias.csv`);
+    let csv = '﻿Mare;Data_hora_observada_UTC-3;Hora_prevista;Erro_horario_min;Altura_observada_m_acima_NR;Altura_prevista_m_acima_NR;Erro_altura_cm (previsto - observado)\r\n';
+    for (const e of events(start, start + len * DAY)) csv += [e.type, `${iso(e.t)} ${hm(e.t)}`, hm(e.t + e.dt * 6e4), e.dt, A.fmt(e.obs / 100, 3), A.fmt(e.prev / 100, 3), A.fmt(e.prev - e.obs, 1)].join(';') + '\r\n';
+    A.download(csv, 'text/csv;charset=utf-8', `Previsto_x_Observado_PM_BM_${iso(start)}_${len}dias.csv`);
   }
   window.TCCompare = { show };
   if (!$('compare').hidden) show();
