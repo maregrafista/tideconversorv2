@@ -59,4 +59,15 @@ figure{margin:0}
 @media print{.topnav,header,footer{display:none}}
 .topnav button{white-space:nowrap}
 @media (max-width:900px){.topnav button,.topnav button[aria-selected=true]{padding:10px 8px!important;font-size:12.5px}.topnav{gap:0;flex-wrap:wrap;justify-content:flex-end}}
-@media (max-width:560px){.topnav{justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;max-width:100%}.topnav button{flex:none}}
+@media (max-width:560px){.top{flex-wrap:wrap}.topnav{display:grid;grid-template-columns:repeat(3,1fr);width:100%;gap:0}.topnav button,.topnav button[aria-selected=true]{white-space:normal;text-align:center;line-height:1.2;min-height:42px;padding:8px 4px!important}}
+@media (max-width:600px){#valueDown,#valueUp,#dayPrev,#dayNext,#nowBtn,.step{min-width:42px;min-height:42px}.chip{min-height:38px}#carta .carta-const{font-size:12px}#carta .carta-const th,#carta .carta-const td{padding:6px 3px}#carta .carta-const th{font-size:10px;letter-spacing:.02em}#carta .carta-tab th{font-size:10.5px}.rangebar .lbl{font-size:11px}}
+/* celular: texto mínimo de 12 px e alvos de toque de pelo menos 40 px */
+@media (max-width:600px){
+  .sub,.hint,.note,.label,.stats,.sample,.direction,.legend,.calendar span,.pill,.kind,.chip,.textbutton,.method-button,.cmp-legend,.carta-note,.fig-cap,.cmp-tabhead,.cmp-card .k,details,details p,summary,.footline,footer,small{font-size:max(12px,1em)}
+  .sub,.hint,.note,.label,.stats,.sample,.chip,.textbutton,.method-button,.pill,.kind,.legend,footer,.footline,.calendar span{font-size:12px!important}
+  select,input:not([type=checkbox]):not([type=radio]):not([type=range]),.chip,.textbutton,.method-button,.step,.seg button{min-height:40px}
+  .textbutton,.method-button,.chip{display:inline-flex;align-items:center}
+  .inputbox input{min-height:0}
+  td small,.calculation,.cmp-card .k,.result h3,.history-readout{font-size:11.5px!important}
+  .calculation{font-size:12px!important}
+}

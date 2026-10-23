@@ -1,4 +1,4 @@
-const CACHE='tideconversor-v2-33';
+const CACHE='tideconversor-v2-37';
 const FILES=['./','index.html','styles.css','app.js','harmonic.js','compare.js','carta.js','compare.css','journal.css','data/data.js','data/harm.js','logo.png','manifest.webmanifest'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});

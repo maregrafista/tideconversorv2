@@ -10,7 +10,7 @@ const fmt = (v, n = 2) => v.toLocaleString('pt-BR', { minimumFractionDigits: n, 
 const signed = (v, n = 1) => (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v), n);
 const parse = s => /^[+-]?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(s.trim()) ? Number(s.trim().replace(',', '.')) : NaN;
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const wide = () => window.innerWidth <= 600;
+const wide = () => window.innerWidth <= 600, fs = () => (wide() ? 15 : 12);   // fontes dos gráficos SVG maiores no celular, onde a figura é reduzida
 
 /* ---------- utilitários ---------- */
 const T975 = [0, 12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262, 2.228, 2.201, 2.179, 2.160, 2.145, 2.131, 2.120, 2.110, 2.101, 2.093, 2.086, 2.080, 2.074, 2.069, 2.064, 2.060, 2.056, 2.052, 2.048, 2.045, 2.042];
@@ -203,14 +203,14 @@ function renderLunar() {
 }
 function drawLagChart() {
   if ($('lunar').hidden || $('lunarGraphView').hidden) return;
-  const W = wide() ? 460 : 920, el = $('lagChart'); el.setAttribute('viewBox', `0 0 ${W} 300`);
+  const W = wide() ? 400 : 920, el = $('lagChart'); el.setAttribute('viewBox', `0 0 ${W} 300`);
   $('springChart').setAttribute('aria-pressed', activeChart === 'S'); $('neapChart').setAttribute('aria-pressed', activeChart === 'Q');
   const arr = ['PM', 'BM'].map(t => HM.slice(0, LAST_MODEL).map((_, i) => getStats(i + 1, activeChart, t)));
   const vals = arr.flat().filter(s => s.mean !== null).flatMap(s => [s.mean - s.ci, s.mean + s.ci]);
   const lo = Math.min(-10, ...vals) - 5, hi = Math.max(10, ...vals) + 5, x = i => 48 + i * (W - 78) / 9, y = v => 240 - (v - lo) / (hi - lo) * 200;
   const grid = css('--chart-grid'), txt = css('--chart-text'), month = Number($('lunarMonth').value);
   let s = `<rect x="${x(month - 1) - 25}" y="20" width="50" height="235" rx="12" fill="${css('--sage')}"/>`;
-  for (let v = Math.ceil(lo / 10) * 10; v <= hi; v += 10) s += `<line x1="45" y1="${y(v)}" x2="${W - 22}" y2="${y(v)}" stroke="${v === 0 ? txt : grid}" ${v === 0 ? 'stroke-dasharray="5 4"' : ''}/><text x="34" y="${y(v) + 4}" text-anchor="end" fill="${txt}" font-size="11">${v}</text>`;
+  for (let v = Math.ceil(lo / 10) * 10; v <= hi; v += 10) s += `<line x1="45" y1="${y(v)}" x2="${W - 22}" y2="${y(v)}" stroke="${v === 0 ? txt : grid}" ${v === 0 ? 'stroke-dasharray="5 4"' : ''}/><text x="34" y="${y(v) + 4}" text-anchor="end" fill="${txt}" font-size="${fs() - 1}">${v}</text>`;
   [0, 1].forEach(j => {
     const color = j === 0 ? css('--pm') : css('--bm'), dx = j === 0 ? -4 : 4;
     for (let i = 1; i < 10; i++) { const a = arr[j][i - 1], b = arr[j][i]; if (a.mean !== null && b.mean !== null) s += `<line x1="${x(i - 1) + dx}" y1="${y(a.mean)}" x2="${x(i) + dx}" y2="${y(b.mean)}" stroke="${color}" stroke-width="2" opacity=".5"/>`; }
@@ -220,7 +220,7 @@ function drawLagChart() {
       s += `<circle class="plotpoint" data-month="${i + 1}" role="button" tabindex="0" aria-label="${HM[i]}, ${j === 0 ? 'preamar' : 'baixamar'}, ${signed(a.mean)} minutos, ${a.n} pares" cx="${x(i) + dx}" cy="${y(a.mean)}" r="${i + 1 === month ? 6 : 4.5}" fill="${a.n < 10 ? css('--card') : color}" stroke="${color}" stroke-width="2"><title>${HM[i]} · ${j === 0 ? 'PM' : 'BM'}: ${signed(a.mean)} min (IC ±${fmt(a.ci, 1)}) · n=${a.n}</title></circle>`;
     });
   });
-  HM.slice(0, LAST_MODEL).forEach((m, i) => s += `<text x="${x(i)}" y="275" text-anchor="middle" fill="${txt}" font-size="12">${m.slice(0, 3)}</text>`);
+  HM.slice(0, LAST_MODEL).forEach((m, i) => s += `<text x="${x(i)}" y="275" text-anchor="middle" fill="${txt}" font-size="${fs()}">${m.slice(0, 3)}</text>`);
   el.innerHTML = s; el.setAttribute('aria-label', `Diferença temporal média em ${CYC[activeChart]}. Negativo antes, positivo depois da previsão de Santana.`);
 }
 setupSubnav($('lunarNav'), drawLagChart);
@@ -256,7 +256,7 @@ function renderHistory() {
 function selectedYears() { return [...document.querySelectorAll('[data-year]:checked')].map(e => +e.dataset.year); }
 function drawHistory() {
   if ($('history').hidden || $('historyGraphView').hidden) return;
-  const W = wide() ? 480 : 920, el = $('historyChart'), years = selectedYears(), daily = histScale === 'daily';
+  const W = wide() ? 420 : 920, el = $('historyChart'), years = selectedYears(), daily = histScale === 'daily';
   el.setAttribute('viewBox', `0 0 ${W} 320`);
   $('histMonthly').setAttribute('aria-pressed', !daily); $('histDaily').setAttribute('aria-pressed', daily);
   $('historyTitle').textContent = daily ? 'Médias diárias sobrepostas por ano' : 'Médias mensais';
@@ -268,10 +268,10 @@ function drawHistory() {
   const x = daily ? d => 48 + d / 365 * (W - 78) : m => 48 + (m - 1) * (W - 78) / 11, y = v => 250 - (v - lo) / (hi - lo) * 205;
   const grid = css('--chart-grid'), txt = css('--chart-text');
   let s = '';
-  for (let k = Math.ceil(lo * 5); k <= Math.floor(hi * 5); k++) { const v = k / 5; s += `<line x1="45" x2="${W - 22}" y1="${y(v)}" y2="${y(v)}" stroke="${grid}"/><text x="35" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="${txt}">${fmt(v, 1)}</text>`; }
-  s += `<text x="45" y="20" fill="${txt}" font-size="11">Nível médio ${refLabel()} (m)</text>`;
+  for (let k = Math.ceil(lo * 5); k <= Math.floor(hi * 5); k++) { const v = k / 5; s += `<line x1="45" x2="${W - 22}" y1="${y(v)}" y2="${y(v)}" stroke="${grid}"/><text x="35" y="${y(v) + 4}" text-anchor="end" font-size="${fs() - 1}" fill="${txt}">${fmt(v, 1)}</text>`; }
+  s += `<text x="45" y="20" fill="${txt}" font-size="${fs() - 1}">Nível médio ${refLabel()} (m)</text>`;
   const mdays = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
-  HM.forEach((m, i) => s += `<text x="${daily ? x(mdays[i] + 15) : x(i + 1)}" y="284" text-anchor="middle" font-size="12" fill="${txt}">${m.slice(0, 3)}</text>`);
+  HM.forEach((m, i) => s += `<text x="${daily ? x(mdays[i] + 15) : x(i + 1)}" y="284" text-anchor="middle" font-size="${fs()}" fill="${txt}">${m.slice(0, 3)}</text>`);
   for (const year of years) {
     const color = css(YC[year]);
     if (daily) {
@@ -389,18 +389,18 @@ function renderForecast() {
   drawForecast(q, daily);
 }
 function drawForecast(q, daily) {
-  const W = wide() ? 460 : 920, el = $('forecastChart'); el.setAttribute('viewBox', `0 0 ${W} 250`);
+  const W = wide() ? 400 : 920, el = $('forecastChart'); el.setAttribute('viewBox', `0 0 ${W} 250`);
   const pts = []; for (let min = 0; min <= 1440; min += 5) { const ts = q.day + min * 60000, f = waterForecast(ts, q.location, q.depth, q.lagOn); pts.push({ min, v: f ? (q.depth === null ? f.h : f.column) : null }); }
   const valid = pts.filter(p => p.v !== null); if (!valid.length) return;
   const vs = valid.map(p => p.v), lo = Math.floor((Math.min(...vs) - .2) * 2) / 2, hi = Math.ceil((Math.max(...vs) + .25) * 2) / 2, x = m => 48 + m / 1440 * (W - 68), y = v => 205 - (v - lo) / (hi - lo) * 170;
   const grid = css('--chart-grid'), txt = css('--chart-text'), line = css('--pm'), bm = css('--bm'), oc = css('--ochre');
-  let s = `<text x="48" y="16" fill="${txt}" font-size="12">${q.depth === null ? 'Nível acima do NR (m)' : 'Coluna d’água (m)'}</text>`;
-  const step = hi - lo > 5 ? 1 : .5; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-8; v += step) s += `<line x1="43" x2="${W - 20}" y1="${y(v)}" y2="${y(v)}" stroke="${grid}"/><text x="35" y="${y(v) + 4}" text-anchor="end" fill="${txt}" font-size="11">${fmt(v, 1)}</text>`;
+  let s = `<text x="48" y="16" fill="${txt}" font-size="${fs()}">${q.depth === null ? 'Nível acima do NR (m)' : 'Coluna d’água (m)'}</text>`;
+  const step = hi - lo > 5 ? 1 : .5; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-8; v += step) s += `<line x1="43" x2="${W - 20}" y1="${y(v)}" y2="${y(v)}" stroke="${grid}"/><text x="35" y="${y(v) + 4}" text-anchor="end" fill="${txt}" font-size="${fs() - 1}">${fmt(v, 1)}</text>`;
   let path = ''; pts.forEach((p, i) => { if (p.v === null) return; path += (i > 0 && pts[i - 1].v !== null ? 'L' : 'M') + x(p.min).toFixed(1) + ',' + y(p.v).toFixed(1) + ' '; });
   s += `<path d="${path}" fill="none" stroke="${line}" stroke-width="2.5"/>`;
-  daily.forEach(p => { const f = waterForecast(p.ts, q.location, q.depth, q.lagOn), v = f ? (q.depth === null ? f.h : f.column) : null; if (v === null) return; const cx = x((p.ts - q.day) / 60000); s += `<circle cx="${cx}" cy="${y(v)}" r="4" fill="${bm}"><title>${p.type} · ${clock(p.ts)} · ${fmt(v)} m</title></circle><text x="${cx}" y="${p.type === 'PM' ? y(v) - 9 : y(v) + 17}" text-anchor="middle" font-size="11" fill="${txt}">${clock(p.ts)}</text>`; });
-  for (let h = 0; h <= 24; h += 3) s += `<text x="${x(h * 60)}" y="238" text-anchor="middle" fill="${txt}" font-size="12">${String(h).padStart(2, '0')}h</text>`;
-  if (q.date === NOW.date) { const nm = (Date.now() - q.day) / 60000; if (nm >= 0 && nm <= 1440) s += `<line x1="${x(nm)}" x2="${x(nm)}" y1="30" y2="210" stroke="${txt}" stroke-width="1" stroke-dasharray="2 3"/><text x="${x(nm)}" y="26" text-anchor="middle" font-size="10" fill="${txt}">agora</text>`; }
+  daily.forEach(p => { const f = waterForecast(p.ts, q.location, q.depth, q.lagOn), v = f ? (q.depth === null ? f.h : f.column) : null; if (v === null) return; const cx = x((p.ts - q.day) / 60000); s += `<circle cx="${cx}" cy="${y(v)}" r="4" fill="${bm}"><title>${p.type} · ${clock(p.ts)} · ${fmt(v)} m</title></circle><text x="${cx}" y="${p.type === 'PM' ? y(v) - 9 : y(v) + 17}" text-anchor="middle" font-size="${fs() - 1}" fill="${txt}">${clock(p.ts)}</text>`; });
+  for (let h = 0; h <= 24; h += 3) s += `<text x="${x(h * 60)}" y="238" text-anchor="middle" fill="${txt}" font-size="${fs()}">${String(h).padStart(2, '0')}h</text>`;
+  if (q.date === NOW.date) { const nm = (Date.now() - q.day) / 60000; if (nm >= 0 && nm <= 1440) s += `<line x1="${x(nm)}" x2="${x(nm)}" y1="30" y2="210" stroke="${txt}" stroke-width="1" stroke-dasharray="2 3"/><text x="${x(nm)}" y="26" text-anchor="middle" font-size="${fs() - 2}" fill="${txt}">agora</text>`; }
   const sel = waterForecast(q.ts, q.location, q.depth, q.lagOn);
   if (sel) { const v = q.depth === null ? sel.h : sel.column, cx = x((q.ts - q.day) / 60000); s += `<line x1="${cx}" x2="${cx}" y1="30" y2="210" stroke="${oc}" stroke-dasharray="4 4"/><circle cx="${cx}" cy="${y(v)}" r="5.5" fill="${oc}"/>`; }
   el.innerHTML = s;

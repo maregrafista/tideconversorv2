@@ -68,6 +68,7 @@
     svg.setAttribute('viewBox', `0 0 ${W} ${Ht}`); svg.setAttribute('height', Ht); svg.setAttribute('width', W); svg.innerHTML = s + '</g>';
   }
   drawSvg(); let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(drawSvg, 120); });
+  new MutationObserver(() => { if (!$('carta').hidden) setTimeout(drawSvg, 30); }).observe($('carta'), { attributes: true, attributeFilter: ['hidden'] });
   if (window.ResizeObserver) { let lw = 0; new ResizeObserver(() => { const w = $('cartaSvg').parentNode.clientWidth; if (w && w !== lw) { lw = w; drawSvg(); } }).observe($('cartaSvg').parentNode); }
   $('cartaPrint').onclick = () => window.print();
 })();
