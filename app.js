@@ -1,7 +1,7 @@
 'use strict';
 (() => {
 const D = window.TC_DATA, MODELS = D.models, TCH = window.TCH, NRM = TCH.NR / 100, CUR = { method: 'harmA' };
-// o NR de trabalho (66,7 cm acima do zero da régua) substitui o antigo RLS − 0,75 m nos dados históricos
+// o NR de trabalho (66,3 cm acima do zero da régua) substitui o antigo RLS − 0,75 m nos dados históricos
 D.daily.forEach(d => d[1] = d[1] + .75 - NRM); D.monthly.forEach(q => { if (q.mean_R !== null) q.mean_H = q.mean_R - NRM; }); D.comparison.forEach(q => { q.mean_2024 += .75 - NRM; q.mean_2025 += .75 - NRM; });
 const $ = id => document.getElementById(id);
 const HM = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];

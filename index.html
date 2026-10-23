@@ -83,7 +83,7 @@
       </div>
       <p class="calculation" id="calculation" aria-live="polite"></p>
       <div class="warning" id="warning" role="status" hidden></div>
-      <p class="note" id="basis">NR = leitura da régua − 0,667 m. A equivalência usa o ajuste do mês selecionado.</p>
+      <p class="note" id="basis">NR = leitura da régua − 0,663 m. A equivalência usa o ajuste do mês selecionado.</p>
     </div>
 
     <div class="card">
@@ -101,7 +101,7 @@
     <div class="calibration" id="model"></div>
     <div class="tablewrap"><table id="modelTable"><caption>Ajustes mensais de referência · T = a + b·R · [IC 95% de b por reamostragem de semanas]</caption>
       <thead><tr><th>Mês</th><th>a (m)</th><th>b</th><th>Pares</th><th>Erro T (cm)</th><th>Erro R (cm)</th><th>Faixa R (m)</th></tr></thead><tbody></tbody></table></div>
-    <p>R = régua acima do zero; H = nível de Fazendinha acima do NR; T = tábua de Santana. H = R − 0,667; T = a + bR; no sentido inverso R = (T − a)/b (regredir R sobre T diretamente dá o mesmo erro, 7,7 cm). A redução de 0,667 m foi informada pelo usuário e pressupõe o mesmo zero entre a régua física e o RLS, sem nivelamento independente.</p>
+    <p>R = régua acima do zero; H = nível de Fazendinha acima do NR; T = tábua de Santana. H = R − 0,663; T = a + bR; no sentido inverso R = (T − a)/b (regredir R sobre T diretamente dá o mesmo erro, 7,7 cm). A redução de 0,663 m foi informada pelo usuário e pressupõe o mesmo zero entre a régua física e o RLS, sem nivelamento independente.</p>
     <p>O ajuste em cada data usa os pares PM/BM com peso gaussiano (σ = 15 dias). Em validação por semanas excluídas o erro típico é de 7,8 cm, igual ao dos ajustes mensais (8,1 cm) e dos harmônicos (7,9 cm), mas sem saltos na virada do mês. O erro é validação temporal interna em 2026, não intervalo de confiança. Alturas intermediárias não foram validadas separadamente; o conversor não prevê horários nem aplica defasagem temporal às alturas.</p>
   </details>
 </section>
@@ -254,7 +254,7 @@
 
   <div class="card" style="margin-top:20px">
     <h3>Quadro de marés de Fazendinha</h3>
-    <p class="sub">Níveis médios calculados com as constantes harmônicas do bloco 02 (313 dias) e NR de 66,7 cm.</p>
+    <p class="sub">Níveis médios calculados com as constantes harmônicas do bloco 02 (313 dias) e NR de 66,3 cm.</p>
     <div class="tablewrap"><table><thead><tr><th>Nível</th><th>acima do NR (m)</th><th>acima do zero da régua (m)</th></tr></thead><tbody id="quadroBody"></tbody></table></div>
     <p class="note" id="quadroNote"></p>
   </div>
@@ -278,7 +278,7 @@
   <details class="method"><summary>Como a previsão é calculada</summary>
     <p><b>Harmônica de Fazendinha (padrão).</b> O nível é a soma de ondas senoidais: nível = S0 + Σ f·H·cos(V0 + u − G), com as 113 constantes harmônicas da análise do PACMARÉ (ANHAMA) da série de 313 dias do bloco 02 (correções f e u, inferência e rejeição a 95 %). Os argumentos astronômicos são os de Schureman. A previsão vale para qualquer data de 2024 a 2030, mas as componentes mais lentas dependem do regime do rio observado em 2025–2026.</p>
     <p><b>Componentes anuais.</b> Sa (21,6 cm) e Ssa (8,3 cm) vêm da mesma análise do PACMARÉ e deslocam o nível médio ao longo do ano, porque o rio sobe e desce. Em dados que não entraram no ajuste, o erro típico é de 10,1 cm (bloco 03), 9,5 cm (bloco 04) e 24 cm na seca de 2024 (bloco 01). Valem enquanto o regime do rio se parecer com 2025–2026.</p>
-    <p><b>Nível de redução.</b> NR de trabalho = 66,7 cm acima do zero da régua (S0 anual 229,7 − 163,0, método do Alte Franco, 1997). Com as constantes do PACMARÉ a mesma fórmula dá 66,3 cm; a diferença de 0,4 cm não foi aplicada. O nível mostrado é o nível acima do NR.</p>
+    <p><b>Nível de redução.</b> NR = S0 − (M2 + S2 + N2 + K2) = 229,7 − 163,4 = 66,3 cm acima do zero da régua (método do Alte Franco, 1997, com as constantes do PACMARÉ). Antes o site usava 66,3 cm, calculado com as constantes de ajuste próprio. O nível mostrado é o nível acima do NR.</p>
     <p><b>Escolha da previsão.</b> Foram comparadas a harmônica com as 57 constantes de ajuste próprio e a com as 113 constantes do PACMARÉ (ambas com Sa e Ssa); a do PACMARÉ teve o menor erro em todos os blocos e é a única usada para Fazendinha. Para o Porto de Santana é usada a tábua oficial de 2026.</p>
   </details>
 </section>
@@ -334,7 +334,7 @@
 <details class="gloss"><summary>Glossário: o que significam esses termos?</summary>
   <dl>
     <dt>Régua (R)</dt><dd>Leitura da régua física de Fazendinha, em metros acima do zero da própria régua.</dd>
-    <dt>NR</dt><dd>Nível de redução, a referência de profundidade. Aqui, NR = leitura da régua − 0,667 m.</dd>
+    <dt>NR</dt><dd>Nível de redução, a referência de profundidade. Aqui, NR = leitura da régua − 0,663 m.</dd>
     <dt>Tábua de Santana</dt><dd>Altura da maré prevista na tábua oficial do Porto de Santana.</dd>
     <dt>Preamar (PM) e baixamar (BM)</dt><dd>Momento de maré mais cheia e de maré mais seca.</dd>
     <dt>Sizígia e quadratura</dt><dd>Sizígia: lua nova e cheia, marés de maior amplitude. Quadratura: quartos de lua, marés de menor amplitude.</dd>
