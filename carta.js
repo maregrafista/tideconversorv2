@@ -46,16 +46,16 @@
     ['Variação do nível médio', 'o rio desloca o nível médio ao longo do ano; Sa (21,6 cm) e Ssa (8,3 cm) já estão incluídas, mas anos secos ou cheios diferem']];
   $('cartaQual').innerHTML = qual.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
   // esquema dos níveis
-  const lv = [['MHWS', q.MHWS], ['MHWN', q.MHWN], ['MSL', q.Zo], ['MLWN', q.MLWN], ['MLWS', q.MLWS], ['NR', 0], ['Zero da régua', -NR]];
-  const top = 20, bot = 380, hi = Math.max(q.MHWS) / 100 + .2, lo = -NR / 100 - .2, Y = v => top + (hi - v / 100) / (hi - lo) * (bot - top);
-  let s = `<rect x="150" y="${Y(q.MHWS)}" width="90" height="${Y(-NR) - Y(q.MHWS)}" fill="var(--sage,#e6ece1)" stroke="var(--line,#ccc)"/>`;
+  const lv = [['MHWS', q.MHWS], ['MHWN', q.MHWN], ['MSL', q.Zo], ['MLWN', q.MLWN], ['MLWS', q.MLWS], ['NR', 0]];
+  const top = 20, bot = 380, hi = Math.max(q.MHWS) / 100 + .2, lo = -.25, Y = v => top + (hi - v / 100) / (hi - lo) * (bot - top);
+  let s = `<rect x="150" y="${Y(q.MHWS)}" width="90" height="${Y(0) - Y(q.MHWS)}" fill="var(--sage,#e6ece1)" stroke="var(--line,#ccc)"/>`;
   s += `<rect x="150" y="${Y(q.MLWS)}" width="90" height="${Y(0) - Y(q.MLWS)}" fill="none"/>`;
   s += `<text x="195" y="${(Y(q.MHWS) + Y(q.MLWS)) / 2 + 4}" text-anchor="middle" font-size="12" fill="var(--muted,#667)">faixa da maré</text>`;
   for (const [n, v] of lv) {
-    const y = Y(v), ref = n === 'NR' || n === 'Zero da régua', col = ref ? '#a56c34' : 'var(--forest,#173f35)';
-    s += `<line x1="${ref ? 104 : 150}" x2="${ref ? 300 : 240}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="${ref ? 1.6 : 1.4}" ${n === 'Zero da régua' ? 'stroke-dasharray="5 3"' : ''}/>` +
+    const y = Y(v), ref = n === 'NR', col = ref ? '#a56c34' : 'var(--forest,#173f35)';
+    s += `<line x1="${ref ? 104 : 150}" x2="${ref ? 300 : 240}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="${ref ? 1.6 : 1.4}" />` +
       `<text x="${ref ? 98 : 144}" y="${y + 4}" text-anchor="end" font-size="13" font-weight="600" fill="${col}">${n}</text>` +
-      `<text x="${ref ? 306 : 246}" y="${y + 4}" font-size="13" fill="var(--ink,#222)">${n === 'Zero da régua' ? '−' + f(NR / 100, 3) : m(v)} m</text>`;
+      `<text x="${ref ? 306 : 246}" y="${y + 4}" font-size="13" fill="var(--ink,#222)">${m(v)} m</text>`;
   }
   s += `<text x="12" y="14" font-size="11" fill="var(--muted,#667)">altura acima do NR (m)</text>`;
   $('cartaSvg').innerHTML = s;
