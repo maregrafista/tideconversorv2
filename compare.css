@@ -37,7 +37,7 @@
 #carta .carta-tab{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
 #carta .carta-tab th,#carta .carta-tab td{padding:6px 8px;border:1px solid var(--line);text-align:right}#carta .carta-tab th{font-size:11px;font-weight:600;color:var(--muted);background:var(--sage,#eef)}
 #carta .carta-tab th:first-child,#carta .carta-tab td:first-child{text-align:left}#carta .carta-tab td:nth-child(2){text-align:center}
-#carta #cartaGerais td:last-child{text-align:left}#carta .carta-tab tr.ref td{border-top:2px solid var(--forest,#173f35);font-weight:600}
+#carta #cartaGerais td:last-child,#carta #cartaQual td:last-child{text-align:left}#carta #cartaQual td:first-child{width:34%}#carta .carta-tab tr.ref td{border-top:2px solid var(--forest,#173f35);font-weight:600}
 #carta .carta-const td:nth-child(2){text-align:right}
 #carta #cartaSvg{width:100%;height:auto;display:block;max-width:520px}
 #carta .carta-note{font-size:12px;color:var(--muted);margin:12px 0 0}

@@ -21,6 +21,20 @@
   }).join('');
   const b = T.blocks[2];
   $('cartaFonte').textContent = `Fonte: análise harmônica do PACMARÉ (113 componentes) de 313 dias de registro da régua de Fazendinha, de ${b[0].slice(8, 10)}/${b[0].slice(5, 7)}/${b[0].slice(0, 4)} a ${b[1].slice(8, 10)}/${b[1].slice(5, 7)}/${b[1].slice(0, 4)}. Sa e Ssa são as componentes anuais (efeito do rio); H em metros, G em graus. NR = S0 − (M2 + S2 + N2 + K2), método do Alte Franco (1997).`;
+  // referência vertical e qualidade (IHO S-44): datum, período, incerteza a 95 %
+  const pt = x => Date.parse(x + '-03:00'), b2 = T.blocks[2], t0 = pt(b2[0]), t1 = pt(b2[1]), dias = Math.round((t1 - t0) / 864e5 + 1 / 24);
+  const p95 = a => { const v = a.slice().sort((x, y) => x - y); return v[Math.min(v.length - 1, Math.ceil(.95 * v.length) - 1)]; };
+  const EP = Date.UTC(2024, 0, 1), ev = T.ev.map(e => ({ t: EP + (e[0] + 180) * 6e4, h: Math.abs(e[3] - e[2]) / 10, dt: Math.abs(e[4]) })), teste = ev.filter(e => e.t < t0 || e.t > t1);
+  const dd = x => `${x.slice(8, 10)}/${x.slice(5, 7)}/${x.slice(0, 4)}`;
+  const qual = [['Nível de redução (datum)', 'NR = S0 − (M2 + S2 + N2 + K2), método do Alte Franco; referido ao zero da régua de Fazendinha'],
+    ['Nível médio (S0)', `${m(q.S0)} m acima do zero da régua (média anual, com Sa e Ssa)`],
+    ['Observação', `${dias} dias de régua (${dd(b2[0])} a ${dd(b2[1])}); mínimo recomendado pela S-44: 30 dias`],
+    ['Ligação com datum terrestre', 'não determinada (sem referência de nível nem ligação geodésica da régua)'],
+    ['Origem das alturas', 'constantes harmônicas (previsão); a observação direta é preferível quando disponível'],
+    ['Incerteza da altura (95 %)', `± ${f(p95(teste.map(e => e.h)) / 100, 2)} m nas preamares e baixamares, em dados fora do ajuste (${teste.length} marés)`],
+    ['Incerteza do horário (95 %)', `± ${Math.round(p95(teste.map(e => e.dt)))} min nas preamares e baixamares, em dados fora do ajuste`],
+    ['Variação do nível médio', 'o rio desloca o nível médio ao longo do ano; Sa (21,6 cm) e Ssa (8,3 cm) já estão incluídas, mas anos secos ou cheios diferem']];
+  $('cartaQual').innerHTML = qual.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
   // esquema dos níveis
   const lv = [['PMS', q.MHWS], ['PMQ', q.MHWN], ['NM', q.Zo], ['BMQ', q.MLWN], ['BMS', q.MLWS], ['NR', 0], ['Zero da régua', -NR]];
   const top = 20, bot = 380, hi = Math.max(q.MHWS) / 100 + .2, lo = -NR / 100 - .2, Y = v => top + (hi - v / 100) / (hi - lo) * (bot - top);
